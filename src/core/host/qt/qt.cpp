@@ -909,6 +909,7 @@ QVBoxLayout * CT_QT_HOST_TASK_MANAGER::f_get_layout() {
 }
 
 CT_HOST * f_host_qt(struct ST_HOST_ARGS * in_ps_args) {
+  QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
 	CT_QT_HOST * pc_host = new CT_QT_HOST(in_ps_args);
 	return dynamic_cast<CT_HOST*>(pc_host);
 }

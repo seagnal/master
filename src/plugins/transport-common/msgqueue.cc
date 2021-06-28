@@ -63,6 +63,7 @@ CT_MSGQUEUE::CT_MSGQUEUE(void) :
 	_sz_msg = 4096;
 	_i_offset = 0;
 	_sz_available = 0;
+  _i_msg_cnt = 100;
 	_pc_buffer = new char[C_PORT_NODE_BUFFER_SIZE];
 	M_ASSERT(_pc_buffer);
 	_sz_buffer = C_PORT_NODE_BUFFER_SIZE;
@@ -96,14 +97,18 @@ int CT_MSGQUEUE::f_apply_config(std::string & in_str_url) {
 	/* Erase previous message queue */
 	message_queue::remove(in_str_url.c_str());
 
-	/* Store queue name */
+  /* Get Size info */
+  if(_c_config.has("size")) {
+    _i_msg_cnt = _c_config.get_data<uint16_t>();
+  }
 
+	/* Store queue name */
 	_str_name = in_str_url.c_str();
 
 	/*Create a message_queue. */
 	_pc_mq = new message_queue(create_only //only create
 			, in_str_url.c_str() //name
-			, 100 //max message number
+			, _i_msg_cnt //max message number
 			, _sz_msg //max message size
 			);
 	if (!_pc_mq) {

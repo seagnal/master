@@ -532,6 +532,11 @@ public :
  */
  std::map<uint32_t, std::string> _m_id_db;
 
+ /*!
+ * environnement variable Database
+ */
+ std::map<std::string, std::string> _m_env;
+
 public:
   /*!
    * Constructor from Host argument structrure.
@@ -1011,7 +1016,7 @@ public:
    * @return true if application is Running
    *         false if application
    */
-  static std::string f_looking_for_file(std::string in_str_file, std::string in_str_var = "");
+  static std::string f_looking_for_file(std::string in_str_file, std::string in_str_var = "", bool in_b_debug = false);
 };
 #else
 class CT_HOST;

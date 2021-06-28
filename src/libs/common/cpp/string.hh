@@ -89,6 +89,7 @@ std::string f_string_remove_whitespaces(std::string const & in_str);
 std::vector<std::string> f_string_split(std::string const &in_str,
 		std::string const &in_str_delim);
 
+std::string f_string_toupper(std::string const & in_str_source);
 std::string f_string_tolower(std::string const & in_str_source);
 
 void f_string_split_ext_and_base(std::string & out_str_base,
@@ -105,6 +106,9 @@ std::string f_string_strftime_64ns(const char * in_str_fmt,
 
 void f_string_human_readable_number(std::string & out_str, uint64_t in_i_number, ET_STRING_HUMAN_READABLE_MODE in_e_mode = E_STRING_HUMAN_READABLE_MODE_DEFAULT);
 void f_string_human_readable_time(std::string & out_str, uint64_t in_i_time);
+std::string const f_string_human_readable_number(uint64_t in_i_number,
+		ET_STRING_HUMAN_READABLE_MODE in_e_mode = E_STRING_HUMAN_READABLE_MODE_DEFAULT);
+std::string const f_string_human_readable_time(uint64_t in_i_time);
 
 std::wstring f_wstring_format(const wchar_t * in_str_replace, ...);
 std::wstring f_wstring_format_va(const wchar_t * in_str_fmt, va_list in_s_ap);

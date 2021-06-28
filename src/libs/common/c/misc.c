@@ -97,7 +97,7 @@ void f_dump_stat(struct stat * in_s_sb) {
 
 }
 
-int f_file_dump(char * in_str_file, char * out_buffer, size_t sz_buffer) {
+int f_file_dump(char const * in_str_file, char * out_buffer, size_t sz_buffer) {
   int fd = open(in_str_file, O_RDONLY);
   int ec = EC_FAILURE;
   if (fd >= 0) {
@@ -203,7 +203,33 @@ size_t f_misc_get_total_free_mem() {
   return i_mem_free+i_cached;
 }
 
-int f_set_file_content(char * in_str_file, char * buff, size_t sz_buffer) {
+size_t f_misc_get_only_free_mem() {
+  char *p;
+  FILE *mem;
+  /* put this in permanent storage instead of stack */
+  static char meminfo[2048];
+  /* we might as well get both swap and memory at the same time.
+   * sure beats opening the same file twice */
+  mem = fopen("/proc/meminfo", "r");
+  memset(meminfo, 0, sizeof(meminfo));
+  if (fread(meminfo, 2048, 1, mem) < 2048) {
+    if (ferror(mem)) {
+      fprintf(stderr, "error reading /proc/meminfo\n");
+      return 0;
+    }
+  }
+  uint64_t i_mem_free = 0;
+  p = strstr(meminfo, "MemFree");
+  if (p) {
+    sscanf(p, "MemFree:%"PRIu64, &i_mem_free);
+    i_mem_free <<=10;
+  }
+
+  fclose(mem);
+  return i_mem_free;
+}
+
+int f_set_file_content(char const * in_str_file, char const * buff, size_t sz_buffer) {
 
   int fd = open(in_str_file, O_WRONLY);
   int ec = EC_FAILURE;
@@ -258,7 +284,7 @@ float f_misc_get_cpu_load(void){
   }else{
     f_load = atof(buffer_load_cpu);
   }
-  //printf("\n Valeur lu dans :: </proc/loadavg> == %f \n",f_load );
+  //printf("\n Valeur lu dans :: </proc/loadavg> == %s \n",buffer_load_cpu );
   return f_load;
 }
 
@@ -284,18 +310,33 @@ pid_t f_misc_popen2(const char *command, int *infp, int *outfp)
     int p_stderr[2];
     pid_t pid;
 
-    if (pipe(p_stdin) != 0)
-        return -1;
+    if (pipe(p_stdin) != 0){
+      return -1;
+    }
 
-    if (pipe(p_stdout) != 0)
-        return -1;
+    if (pipe(p_stdout) != 0){
+      close(p_stdin[0]);
+      close(p_stdin[1]);
+      return -1;
+    }
 
-    if (pipe(p_stderr) != 0)
-        return -1;
+    if (pipe(p_stderr) != 0){
+      close(p_stdout[1]);
+      close(p_stdin[0]);
+      close(p_stdin[1]);
+      close(p_stdout[0]);
+      return -1;
+    }
 
     pid = fork();
 
     if (pid < 0) {
+      close(p_stdout[1]);
+      close(p_stderr[1]);
+      close(p_stdin[0]);
+      close(p_stdin[1]);
+      close(p_stdout[0]);
+      close(p_stderr[0]);
       perror("fork");
       CRIT("An error has occured during fork()");
       return pid;
@@ -313,6 +354,9 @@ pid_t f_misc_popen2(const char *command, int *infp, int *outfp)
         execve("/bin/sh", (char * const *) ac_argv, NULL);
         /* We should never reach this point */
         perror("execvp");
+        close(p_stdout[1]);
+        close(p_stderr[1]);
+        close(p_stdin[0]);
         exit(1);
     } else {
         close(p_stdout[1]);
@@ -423,7 +467,7 @@ int f_misc_execute(/*std::string const &*/const char * in_str_cmd, int8_t in_b_d
               /* Kill process after timeout */
               if(i_timeout > 5e9) {
                 //_WARN << "TIMEOUT - KILL PID" << _V(i_pid);
-                printf("TIMEOUT - KILL PID %ld\n", (long int)(i_pid));
+                printf("(misc.c) TIMEOUT - KILL PID %ld  %s\n", (long int)(i_pid), in_str_cmd);
                 kill(i_pid, SIGKILL);
               }
             /* If pid is not here any more */
@@ -441,4 +485,39 @@ int f_misc_execute(/*std::string const &*/const char * in_str_cmd, int8_t in_b_d
       /* Wait this process to end */
     }
     return ec_code;
+}
+
+int f_misc_is_mounted(const char * in_str_mnt) {
+  struct stat s_mountpoint;
+  struct stat s_parent;
+
+  /* Get the stat structure of the directory...*/
+  if (stat(in_str_mnt, &s_mountpoint) == -1) {
+      perror("failed to stat mountpoint:");
+      return EC_FAILURE;
+  }
+
+  /* ... and its parent. */
+  {
+    char str_result[1024];   // array to hold the result.
+    strncpy(str_result,in_str_mnt,sizeof(str_result)); // copy string one into the result.
+    strncat(str_result,"/..",sizeof(str_result)); // append string two to the result.
+    if (stat(str_result, &s_parent) == -1) {
+        perror("failed to stat parent:");
+        return EC_FAILURE;
+    }
+  }
+
+  /* Compare the st_dev fields in the results: if they are
+     equal, then both the directory and its parent belong
+     to the same filesystem, and so the directory is not
+     currently a mount point.
+  */
+  if (s_mountpoint.st_dev == s_parent.st_dev) {
+      //printf("No, there is nothing mounted in that directory.\n");
+      return EC_BYPASS;
+  } else {
+      //printf("Yes, there is currently a filesystem mounted.\n");
+      return EC_SUCCESS;
+  }
 }

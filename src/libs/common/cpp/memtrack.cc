@@ -250,10 +250,12 @@ void * CT_MEMTRACK::f_malloc(size_t in_sz, int i_offset_bt) {
 	ps_info->b_enabled = b_enabled;
 	memset(ps_info->s_bt.pv_bt, 0, C_MEMTRACK_BACKTRACE * sizeof(void*));
 #ifdef LF_MEMTRACK_BACKTRACE
-	if (b_enabled) {
-		ps_info->s_bt.sz_bt = CT_DEBUG::f_get_backtrace(ps_info->s_bt.pv_bt,
-		C_MEMTRACK_BACKTRACE);
-	}
+  #if 0
+  	if (b_enabled) {
+  		ps_info->s_bt.sz_bt = CT_DEBUG::f_get_backtrace(ps_info->s_bt.pv_bt,
+  		C_MEMTRACK_BACKTRACE);
+  	}
+  #endif
 #endif
 
 	if (b_enabled) {
@@ -434,8 +436,10 @@ void CT_MEMTRACK::f_register(ST_MEMTRACK_INFO & in_s_info,
 	memset(in_s_info.s_bt.pv_bt, 0, C_MEMTRACK_BACKTRACE * sizeof(void*));
 
 #ifdef LF_MEMTRACK_BACKTRACE
-	in_s_info.s_bt.sz_bt = CT_DEBUG::f_get_backtrace(in_s_info.s_bt.pv_bt,
-	C_MEMTRACK_BACKTRACE);
+  if(!strcmp(in_str_name,"CT_PORT_NODE")){
+    in_s_info.s_bt.sz_bt = CT_DEBUG::f_get_backtrace(in_s_info.s_bt.pv_bt,
+      C_MEMTRACK_BACKTRACE);
+  }
 #endif
 
 	//printf("++R %p %p %d\n", &in_s_info, in_s_info.pv_pointer, (int)in_s_info.sz_allocated);
@@ -457,7 +461,7 @@ void CT_MEMTRACK::f_dump_stats(bool in_b_bt) {
 #if 1
 	std::cout << "DUMP STATS " << std::endl;
 	std::map<char const *, ST_MEMTRACK_STAT, std::less<char const *>,
-			CT_MEMTRACK_MALLOCATOR<std::pair<char const *, ST_MEMTRACK_STAT>>> m_size;
+			CT_MEMTRACK_MALLOCATOR<std::pair<char const *const, ST_MEMTRACK_STAT>>> m_size;
 
 	typedef std::map<char const *, ST_MEMTRACK_STAT>::iterator m_size_iterator_t;
 
@@ -522,12 +526,12 @@ void CT_MEMTRACK::f_dump_stats(bool in_b_bt) {
 			typedef std::map<ST_MEMTRACK_BT, ST_MEMTRACK_STAT,
 					std::less<ST_MEMTRACK_BT>,
 					CT_MEMTRACK_MALLOCATOR<
-							std::pair<ST_MEMTRACK_BT, ST_MEMTRACK_STAT>>>::iterator bt_iterator_t;
+							std::pair<ST_MEMTRACK_BT const, ST_MEMTRACK_STAT>>>::iterator bt_iterator_t;
 			typedef std::map<void*, ST_MEMTRACK_STAT, std::less<void*>,
-					CT_MEMTRACK_MALLOCATOR<std::pair<void*, ST_MEMTRACK_STAT>>> ::iterator bt_type_iterator_t;
+					CT_MEMTRACK_MALLOCATOR<std::pair<void* const, ST_MEMTRACK_STAT>>> ::iterator bt_type_iterator_t;
 
 			std::map<void*, ST_MEMTRACK_STAT, std::less<void*>,
-					CT_MEMTRACK_MALLOCATOR<std::pair<void*, ST_MEMTRACK_STAT>>> m_elem_type;
+					CT_MEMTRACK_MALLOCATOR<std::pair<void*const , ST_MEMTRACK_STAT>>> m_elem_type;
 			//if (pc_it->second.m_elem.size() < 4)
 			{
 				//int i_index = 0;
@@ -584,16 +588,18 @@ void CT_MEMTRACK::f_dump_stats(bool in_b_bt) {
 						}
 					}
 
-#if 0
-					if(strstr(pc_it->first, "UNKNOWN") != NULL) {
+#if 1
+					if(!strcmp(pc_it->first, "CT_PORT_NODE")) {
 						std::cout<< " --------- "<< std::endl;
 						CT_DEBUG::f_print_backtrace_cxx(pc_it_bt->first.pv_bt, C_MEMTRACK_BACKTRACE);
-
-
+            //std::cout << " * Name: "<<str_name << std::endl;
+            std::cout << " * Nb: "<< std::dec <<pc_it_bt->second.i_nb << std::endl;
+            std::cout << " * Size: "<< std::dec << pc_it_bt->second.i_size << std::endl;
+            std::cout << " * SizeA: "<< std::dec <<pc_it_bt->second.i_size_allocated << std::endl;
 					}
 #endif
 
-#if 1
+#if 0
 	        {
 						if(strstr(pc_it->first, "UNKNOWN") != NULL) {
 							std::string str_name =

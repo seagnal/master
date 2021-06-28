@@ -171,6 +171,13 @@ void CT_UDP::f_bind(void) {
 	_c_socket.open(udp::v4());
 	_c_socket.set_option(boost::asio::ip::udp::socket::reuse_address(true));
 
+  if(f_get_config().has("ttl")) {
+     char i_ttl = uint64_t(*f_get_config().get("ttl"));
+     boost::asio::ip::unicast::hops option(i_ttl);
+     _c_socket.set_option(option);
+      _DBG << "UDP setting ttl:" << (int) i_ttl;
+  }
+
 	int sz_buffer = 50 * 1024 * 1024;
 	{
 		boost::asio::socket_base::receive_buffer_size option(sz_buffer);

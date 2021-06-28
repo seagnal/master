@@ -113,6 +113,8 @@ bool CT_WOL::f_broadcast() {
         f_format();
         socket.send_to(boost::asio::buffer(_c_packet),  boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 9));
         socket.close();
+    } else {
+      std::cout << "Unable to open socket" << std::endl;
     }
 
     if (error)

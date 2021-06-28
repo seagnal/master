@@ -85,15 +85,36 @@ CT_TCP_SESSION::CT_TCP_SESSION(CT_TCP& in_c_server) :
   /* Set recv timeout */
 #if defined OS_WINDOWS
   int32_t timeout = 1000;
+  #if BOOST_VERSION < 104700
   setsockopt(_c_socket.native(), SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
   setsockopt(_c_socket.native(), SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout));
+  #else
+  setsockopt(_c_socket.native_handle(), SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+  setsockopt(_c_socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout));
+  #endif
 #else
   struct timeval tv;
   tv.tv_sec = 0;
   tv.tv_usec = 250000;
+  #if BOOST_VERSION < 104700
   setsockopt(_c_socket.native(), SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
   setsockopt(_c_socket.native(), SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+  #else
+  setsockopt(_c_socket.native_handle(), SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+  setsockopt(_c_socket.native_handle(), SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+  #endif
 #endif
+
+  if(_c_server.f_get_config().has("ttl")) {
+    char i_ttl = uint64_t(*_c_server.f_get_config().get("ttl"));
+
+    #if BOOST_VERSION < 104700
+    setsockopt(_c_socket.native(), IPPROTO_IP, IP_TTL, &i_ttl, sizeof(i_ttl));
+    #else
+    setsockopt(_c_socket.native_handle(), IPPROTO_IP, IP_TTL, &i_ttl, sizeof(i_ttl));
+    #endif
+     _DBG << "setting ttl:" << (int) i_ttl;
+  }
 }
 
 CT_TCP_SESSION::~CT_TCP_SESSION() {
@@ -278,7 +299,12 @@ int CT_TCP_SESSION::f_sync_read(void) {
       boost::system::error_code ec_boost;
 
       /* Run one */
-      if(!_c_socket.get_io_service().poll_one(ec_boost)) {
+#if BOOST_VERSION < 107000
+      auto & refIO = _c_socket.get_io_service();
+#else
+      boost::asio::io_context& refIO = static_cast<boost::asio::io_context&>(_c_socket.get_executor().context());
+#endif
+      if(!refIO.poll_one(ec_boost)) {
         //_DBG << _V(this)<< " Reset IO SERVICE";
         usleep(0);
       }

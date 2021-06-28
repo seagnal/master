@@ -23,3 +23,7 @@ if not bs.init:
 
   if bs['config'] == 'example':
       bs.env_run['ENV']['MASTER_CONFIG'] = os.path.abspath('config/example.xml');
+
+  if bs['config'] == 'example-remote':
+      bs.env_run['MASTER_DIRS'].insert(0, 'src/plugins/os/buildroot')
+      bs.env_run['ENV']['MASTER_CONFIG'] = os.path.abspath('config/example.xml');

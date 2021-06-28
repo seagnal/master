@@ -55,6 +55,9 @@
  ***********************************************************************/
 #include <list>
 #include <c/common.h>
+
+//Eigen ERROR
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #include <Eigen/Core>
 /***********************************************************************
  * Defines

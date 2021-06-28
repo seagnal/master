@@ -111,17 +111,20 @@ int CT_HOST_CONTEXT::f_execute_single(void) {
 	//D("%p - Running", this);
 
 	/* Execute main context callback */
-//#define LF_ABORT_SHIELD
 #ifdef LF_ABORT_SHIELD
 	try {
 #endif
-	ec = _c_cb(*this);
+		ec = _c_cb(*this);
 #ifdef LF_ABORT_SHIELD
-} catch (const std::exception & e) {
-	_FATAL << "EXCEPTION: " << e.what(); // uniquement en debug 
-	//exit(-1);
-	ec = EC_SUCCESS;
-}
+	} catch (const std::exception & e) {
+		if (getenv("RELEASE_MODE") != NULL) {
+			_CRIT << "EXCEPTION: " << e.what(); // uniquement en debug
+		} else {
+			_FATAL << "EXCEPTION: " << e.what(); // uniquement en debug
+		}
+		//exit(-1);
+		ec = EC_SUCCESS;
+	}
 #endif
 
 	/* Execute extra on success */
@@ -159,25 +162,29 @@ int CT_HOST_CONTEXT::f_execute_single(void) {
 #ifdef LF_ABORT_SHIELD
 				try {
 #endif
-				/* During Idle ignore nodes that are not dedicated to Core communication */
-				if(CT_HOST::host->f_context_is_idling())
-				{
-					if(s_cb_extra.pc_data->get_id() > E_ID_CORE_NB_ID) {
-						continue;
+					/* During Idle ignore nodes that are not dedicated to Core communication */
+					if(CT_HOST::host->f_context_is_idling())
+					{
+						if(s_cb_extra.pc_data->get_id() > E_ID_CORE_NB_ID) {
+							continue;
+						}
 					}
-				}
 
-				{
-					CT_GUARD_UNLOCK c_guard_unlock(c_guard);
-					s_cb_extra.pc_sb->operator ()(s_cb_extra.pc_data);
-				}
+					{
+						CT_GUARD_UNLOCK c_guard_unlock(c_guard);
+						s_cb_extra.pc_sb->operator ()(s_cb_extra.pc_data);
+					}
 #ifdef LF_ABORT_SHIELD
 
-			} catch (const std::exception & e) {
-				_CRIT << "EXCEPTION" << e.what();
-				//exit(-1);
-				ec = EC_SUCCESS;
-			}
+				} catch (const std::exception & e) {
+					if (getenv("RELEASE_MODE") != NULL) {
+						_CRIT << "EXCEPTION PUSH " << e.what();
+					} else {
+						_FATAL << "EXCEPTION PUSH: " << e.what(); // uniquement en debug
+					}
+					//exit(-1);
+					ec = EC_SUCCESS;
+				}
 #endif
 			}
 

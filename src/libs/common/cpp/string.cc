@@ -83,6 +83,11 @@ std::string f_string_tolower(std::string const & in_str_source) {
 	std::transform(str_tmp.begin(), str_tmp.end(), str_tmp.begin(), ::tolower);
 	return str_tmp;
 }
+std::string f_string_toupper(std::string const & in_str_source) {
+	std::string str_tmp = in_str_source;
+	std::transform(str_tmp.begin(), str_tmp.end(), str_tmp.begin(), ::toupper);
+	return str_tmp;
+}
 
 std::string f_string_replace(std::string const & in_str_source,
 		const char * in_str_find, const char * in_str_replace) {
@@ -328,6 +333,19 @@ void f_string_human_readable_number(std::string & out_str, uint64_t in_i_number,
 	d_value *= d_lim;
 	out_str = f_string_format("%u %s", uint(d_value), str_suffix);
 }
+std::string const f_string_human_readable_number(uint64_t in_i_number,
+		ET_STRING_HUMAN_READABLE_MODE in_e_mode) {
+      std::string str_tmp;
+      f_string_human_readable_number(str_tmp, in_i_number, in_e_mode);
+      return str_tmp;
+  }
+
+
+  std::string const f_string_human_readable_time(uint64_t in_i_time) {
+        std::string str_tmp;
+        f_string_human_readable_time(str_tmp, in_i_time);
+        return str_tmp;
+    }
 
 void f_string_human_readable_time(std::string & out_str, uint64_t in_i_time) {
 	std::string str_day;

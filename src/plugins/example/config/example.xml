@@ -19,6 +19,11 @@
 			<name>port3</name>
 			<url>
   			tcp://127.0.0.1:50100
+        <ttl>11</ttl>
+			</url>
+      <url>
+  			udp://127.0.0.1:50101
+        <ttl>102</ttl>
 			</url>
 		</port>
 	</ports>
@@ -45,6 +50,9 @@
 		<name>port3</name>
 		<url>
 				tcp://server:50100
+		</url>
+    <url>
+				udp://server:50101
 		</url>
 	</port>
 </ports>

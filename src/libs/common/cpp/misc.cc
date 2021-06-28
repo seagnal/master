@@ -58,6 +58,63 @@
 #include <unistd.h>
 #include <utime.h>
 
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+
+static int __f_file_dump(char const * in_str_file, char * out_buffer, size_t sz_buffer) {
+  int fd = open(in_str_file, O_RDONLY);
+  int ec = EC_FAILURE;
+  if (fd >= 0) {
+    int ret = read(fd, out_buffer, sz_buffer);
+#if 0
+    int i;
+    DBG("%d", ret);
+    for( i=0; i<ret; i++) {
+      DBG("%d %x %c", i, out_buffer[i], out_buffer[i]);
+    }
+#endif
+    out_buffer[ret - 1] = 0;
+    if (ret == -1) {
+      ec = EC_FAILURE;
+    } else {
+      ec = EC_SUCCESS;
+    }
+    close(fd);
+  }
+  return ec;
+}
+
+
+
+std::string f_misc_get_output(const std::string & in_str_cmd) {
+  std::string str_tmp;
+  FILE *fp;
+
+  /* Open the command for reading. */
+  fp = popen(in_str_cmd.c_str(), "r");
+  if (fp == NULL) {
+    return "";
+  }
+
+  /* Read the output a line at a time - output it. */
+  char path[1024];
+  while (fgets(path, sizeof(path), fp) != NULL) {
+    str_tmp += std::string(path);
+  }
+
+  /* close */
+  pclose(fp);
+
+  return str_tmp;
+}
 bool f_file_exits(const std::string& in_str_name) {
 	struct stat s_buffer;
 	return (stat(in_str_name.c_str(), &s_buffer) == 0);
@@ -196,4 +253,100 @@ std::vector<char> f_base64_decode(std::string const& in_str) {
 	}
 
 	return ret;
+}
+
+std::string f_misc_get_ip_address(std::string const & in_str_device){
+  int fd;
+  int ec;
+  std::string res;
+  if(in_str_device == "lo") {
+    res =  "127.0.0.1";
+    goto out_err;
+  } else {
+    struct ifreq ifr;
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd < 0){
+      goto out_err;
+    }
+    /* I want to get an IPv4 IP address */
+    ifr.ifr_addr.sa_family = AF_INET;
+    /* I want IP address attached to device */
+    strncpy(ifr.ifr_name, in_str_device.c_str(), M_MIN(IFNAMSIZ-1,int(in_str_device.size())));
+    ec  = ioctl(fd, SIOCGIFADDR, &ifr);
+    if (ec < 0){
+      goto out_free_socket;
+    }
+    if(inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr) != NULL){
+      res = inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
+    }
+  }
+  out_free_socket:
+  close(fd);
+  out_err:
+
+  return res;
+}
+
+
+
+/* Replace middle of string with [...] to force maximum string size */
+std::string f_misc_str_remove_middle(std::string const & in_str_line, uint16_t i_size_max, uint16_t i_nb_carac_start=0, uint16_t i_nb_carac_end=0){
+
+  assert(i_size_max >= i_nb_carac_start + i_nb_carac_end);
+
+  if (in_str_line.size() < i_size_max) {
+	  return in_str_line;
+  } else {
+	  std::string str_middle = "[...]";
+	  if (i_nb_carac_start + str_middle.size() + i_nb_carac_end > i_size_max) {
+		  uint16_t i_extra_caracters = i_nb_carac_start + str_middle.size() + i_nb_carac_end - i_size_max;
+		  i_nb_carac_start -= (i_extra_caracters+1) / 2;
+		  i_nb_carac_end   -= (i_extra_caracters+1) / 2;
+	  } else {
+		  uint16_t i_extra_caracters = i_size_max - (i_nb_carac_start + str_middle.size() + i_nb_carac_end);
+		  i_nb_carac_start += (i_extra_caracters) / 2;
+		  i_nb_carac_end   += (i_extra_caracters) / 2;
+    }
+
+	  assert(i_nb_carac_start + str_middle.size() + i_nb_carac_end <= i_size_max);
+
+	  std::string str_out = in_str_line.substr(0,i_nb_carac_start);
+	  str_out += str_middle;
+	  str_out += in_str_line.substr(in_str_line.size()-i_nb_carac_end,in_str_line.size());
+
+	  assert(str_out.size() <= i_size_max);
+
+	  return str_out;
+  }
+
+}
+
+float f_misc_get_themal_temp(uint32_t in_i_thermal_zone){
+  char buffer[128]; // return load cpu since 1 minutes
+  float f_temp = 0.0;
+  std::string str_filename = std::string("/sys/class/thermal/thermal_zone")+std::to_string(in_i_thermal_zone)+"/temp";
+
+  int ec = __f_file_dump(str_filename.c_str(),buffer,(size_t)sizeof(buffer));
+  if (ec != EC_SUCCESS) {
+     f_temp = 0;
+  }else{
+    f_temp = atof(buffer)/1000.0;
+  }
+  //printf("\n Valeur lu dans :: </proc/loadavg> == %s \n",buffer_load_cpu );
+  return f_temp;
+}
+
+std::string f_misc_get_themal_type(uint32_t in_i_thermal_zone){
+  char buffer[128]; // return load cpu since 1 minutes
+  std::string str_type;
+  std::string str_filename = std::string("/sys/class/thermal/thermal_zone")+std::to_string(in_i_thermal_zone)+"/type";
+
+  int ec = __f_file_dump(str_filename.c_str(),buffer,(size_t)sizeof(buffer));
+  if (ec != EC_SUCCESS) {
+
+  }else{
+    str_type = buffer;
+  }
+  //printf("\n Valeur lu dans :: </proc/loadavg> == %s \n",buffer_load_cpu );
+  return str_type;
 }

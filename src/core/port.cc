@@ -137,8 +137,8 @@ CT_PORT_NODE & CT_PORT_NODE::operator()(uint32_t const & in_id,
 CT_PORT_NODE & CT_PORT_NODE::get(uint32_t const & in_id, uint64_t in_i_indice,
 		bool in_b_create) {
 	node<port_node_id_t, CT_GUARD> & c_tmp =
-	node<port_node_id_t, CT_GUARD>::get(in_id, in_i_indice,
-			in_b_create);
+			node<port_node_id_t, CT_GUARD>::get(in_id, in_i_indice,
+					in_b_create);
 	return static_cast<CT_PORT_NODE&>(c_tmp);
 }
 
@@ -171,7 +171,7 @@ void CT_PORT_NODE::set_id(uint32_t const & in_id) {
 #endif
 
 	node<port_node_id_t,
-					CT_GUARD>::set_id(in_id);
+	CT_GUARD>::set_id(in_id);
 }
 CT_PORT_NODE & CT_PORT_NODE::operator()(uint32_t const & in_id,
 		uint64_t in_i_indice) {
@@ -219,33 +219,46 @@ CT_GUARD<CT_PORT_NODE> CT_PORT_NODE::add(uint32_t const & in_id) {
 			node<uint32_t, CT_GUARD>::add(in_id));
 	//return dynamic_cast<CT_PORT_NODE&>(*(node<uint32_t,CT_GUARD>::add(in_id)));
 }
+CT_GUARD<CT_PORT_NODE> CT_PORT_NODE::add_from(uint32_t const & in_id,CT_GUARD<CT_PORT_NODE> & in_pc_node) {
+	/* Insert created node */
+	CT_GUARD<node<uint32_t, CT_GUARD>> pc_tmp = dynamic_pointer_cast<node<uint32_t, CT_GUARD>>(in_pc_node);
+
+	return dynamic_pointer_cast<CT_PORT_NODE>(
+			node<uint32_t, CT_GUARD>::add_from(in_id,pc_tmp));
+}
 
 void CT_PORT_NODE::display(int i_shift) {
 
 	std::string str_indent(i_shift*2, ' ');
-
-	std::string str_name = CT_HOST::host->f_id_name(this->get_id());
+  std::string str_name = CT_HOST::host->f_id_name(this->get_id());
+  /*
+  if ("NONE" == str_name){
+    char buffer [15];
+    sprintf(buffer, "%x", this->get_id());
+    str_name = buffer;
+  }
+  */
 	size_t sz_pos = str_name.find_last_of("::");
 	size_t sz_str = str_name.substr(sz_pos+1).size();
 
 	size_t sz_allign = 1000 - sz_str - i_shift*2;
 	sz_allign = sz_allign % 40;
 	std::string str_allign(sz_allign, ' ');
-  if(this->get_size() == 4){
-    _DBG << str_indent  <<  str_name.substr(sz_pos+1) << /* " ("  << std::uppercase  << std::hex << this->get_id() << ") "  << */ str_allign <<  "    SIZE:" << this->get_size()<<"  uint32_t:"<<std::setw(20)<<this->get_data<uint32_t>()<<"   int32_t:" << std::setw(20)<<this->get_data<int32_t>()<<"   float:"<<this->get_data<float>();
-  }
-  else if(this->get_size() == 2){
-    _DBG << str_indent  <<  str_name.substr(sz_pos+1) << /* " ("  << std::uppercase  << std::hex << this->get_id() << ") "  << */ str_allign <<  "    SIZE:" << this->get_size()<<"  uint16_t:"<<std::setw(20)<<this->get_data<uint16_t>()<<"   int16_t:"<< std::setw(20)<<this->get_data<int16_t>();
-  }
-  else if(this->get_size() == 8){
-    _DBG << str_indent  <<  str_name.substr(sz_pos+1) << /* " ("  << std::uppercase  << std::hex << this->get_id() << ") "  << */ str_allign <<  "    SIZE:" << this->get_size()<<"  uint64_t:"<<std::setw(20)<<this->get_data<uint64_t>()<<"   int64_t:"<< std::setw(20)<<this->get_data<int64_t>()<<"   double:"<<this->get_data<double>();
-  }
-  else if(this->get_size() == 1){
-    _DBG << str_indent  <<  str_name.substr(sz_pos+1) << /* " ("  << std::uppercase  << std::hex << this->get_id() << ") "  << */ str_allign <<  "    SIZE:" << this->get_size()<<"  uint8_t :" <<std::setw(20)<<(uint16_t)this->get_data<uint8_t>() <<"   char:"  <<this->get_data<char>();
-  }
-  else{
-    _DBG << str_indent  <<  str_name.substr(sz_pos+1) << /* " ("  << std::uppercase  << std::hex << this->get_id() << ") "  << */ str_allign <<  "    SIZE:" << this->get_size();
-  }
+	if(this->get_size() == 4){
+		_DBG << str_indent  <<  str_name.substr(sz_pos+1) << /* " ("  << std::uppercase  << std::hex << this->get_id() << ") "  << */ str_allign <<  "    SIZE:" << this->get_size()<<"  uint32_t:"<<std::setw(20)<<this->get_data<uint32_t>()<<"   int32_t:" << std::setw(20)<<this->get_data<int32_t>()<<"   float:"<<this->get_data<float>();
+	}
+	else if(this->get_size() == 2){
+		_DBG << str_indent  <<  str_name.substr(sz_pos+1) << /* " ("  << std::uppercase  << std::hex << this->get_id() << ") "  << */ str_allign <<  "    SIZE:" << this->get_size()<<"  uint16_t:"<<std::setw(20)<<this->get_data<uint16_t>()<<"   int16_t:"<< std::setw(20)<<this->get_data<int16_t>();
+	}
+	else if(this->get_size() == 8){
+		_DBG << str_indent  <<  str_name.substr(sz_pos+1) << /* " ("  << std::uppercase  << std::hex << this->get_id() << ") "  << */ str_allign <<  "    SIZE:" << this->get_size()<<"  uint64_t:"<<std::setw(20)<<this->get_data<uint64_t>()<<"   int64_t:"<< std::setw(20)<<this->get_data<int64_t>()<<"   double:"<<this->get_data<double>();
+	}
+	else if(this->get_size() == 1){
+		_DBG << str_indent  <<  str_name.substr(sz_pos+1) << /* " ("  << std::uppercase  << std::hex << this->get_id() << ") "  << */ str_allign <<  "    SIZE:" << this->get_size()<<"  uint8_t :" <<std::setw(20)<<(uint16_t)this->get_data<uint8_t>() <<"   char:"  <<this->get_data<char>();
+	}
+	else{
+		_DBG << str_indent  <<  str_name.substr(sz_pos+1) << /* " ("  << std::uppercase  << std::hex << this->get_id() << ") "  << */ str_allign <<  "    SIZE:" << this->get_size();
+	}
 
 	for(auto && rc_child : this->get_childs()) {
 
@@ -253,6 +266,24 @@ void CT_PORT_NODE::display(int i_shift) {
 
 	}
 }
+
+
+void CT_PORT_NODE::f_update_node(std::list<std::pair<uint32_t, uint32_t>> &rlsi_id) {
+
+	for (const auto & rsi_id : rlsi_id) {
+		if (rsi_id.first == this->get_id()) {
+			this->set_id(rsi_id.second);
+			continue;
+		}
+	}
+
+	for(auto && rc_child : this->get_childs()) {
+
+		rc_child->f_update_node(rlsi_id);
+
+	}
+}
+
 
 template<>
 void CT_PORT_NODE::set_data<>(std::string const & in) {
@@ -499,19 +530,19 @@ std::vector<double> const CT_PORT_NODE::get_data<>(void) const {
 
 int CT_PORT_NODE::from_parser_raw(node_parser<CT_GUARD> & in_c_parser) {
 	clear();
-  bool b_loop = true;
+	bool b_loop = true;
 	int ec;
-  set_id(E_ID_COMMON_ID_RAW);
-  //node_resource_segment<CT_GUARD> c_tmp;
-  std::vector<char> v_tmp;
+	set_id(E_ID_COMMON_ID_RAW);
+	//node_resource_segment<CT_GUARD> c_tmp;
+	std::vector<char> v_tmp;
 
-  //c_tmp.resize(1024);
-  v_tmp.reserve(1e6);
-  //uint32_t i_offset = 0;
-//	char *pi_buffer = c_tmp.mmap();
+	//c_tmp.resize(1024);
+	v_tmp.reserve(1e6);
+	//uint32_t i_offset = 0;
+	//	char *pi_buffer = c_tmp.mmap();
 
 	while (b_loop) {
-    char i_data;
+		char i_data;
 		/* Read flags */
 		ec = in_c_parser.parse_data(&i_data, 1);
 		if (ec != EC_BML_SUCCESS) {
@@ -519,24 +550,24 @@ int CT_PORT_NODE::from_parser_raw(node_parser<CT_GUARD> & in_c_parser) {
 		}
 
 		/* Copy data into buffer */
-    //pi_buffer[i_offset] = i_data;
-    v_tmp.push_back(i_data);
-    //i_offset++;
+		//pi_buffer[i_offset] = i_data;
+		v_tmp.push_back(i_data);
+		//i_offset++;
 
 		/* Stop on buffer full */
-    if(v_tmp.size()/*i_offset*/ == v_tmp.capacity()/*c_tmp.size()*/) {
-      b_loop = false;
-    }
+		if(v_tmp.size()/*i_offset*/ == v_tmp.capacity()/*c_tmp.size()*/) {
+			b_loop = false;
+		}
 
 		/* Stop on separator char */
-    if(i_data == '\n') {
-      b_loop = false;
-    }
+		if(i_data == '\n') {
+			b_loop = false;
+		}
 	}
 
-  /* Update data */
-  //set_segment(c_tmp, 0, i_offset);
-  memcpy_from_buffer(v_tmp.data(),v_tmp.size());
+	/* Update data */
+	//set_segment(c_tmp, 0, i_offset);
+	memcpy_from_buffer(v_tmp.data(),v_tmp.size());
 
 	on_read();
 
@@ -546,7 +577,7 @@ int CT_PORT_NODE::from_parser_raw(node_parser<CT_GUARD> & in_c_parser) {
 
 int CT_PORT_NODE::to_writer_raw(node_writer<CT_GUARD> & in_c_writer, int in_i_align) {
 	int ec;
-  size_t sz_buffer = _s_segment._pc_resource ? _s_segment._sz_data : 0;
+	size_t sz_buffer = _s_segment._pc_resource ? _s_segment._sz_data : 0;
 
 	on_write();
 
@@ -829,7 +860,7 @@ void CT_TRANSPORT::f_set_config(CT_NODE const & in_c_node) {
 	/* Store raw option in boolean flag to prevent read of node */
 	if(_c_config.has("raw")) {
 		_b_raw_mode =  true;
-    //M_BUG();
+		//M_BUG();
 	}
 
 }
@@ -997,7 +1028,7 @@ int CT_PORT_INTERNAL::f_send(CT_GUARD<CT_PORT_NODE> const & in_c_node) {
  ***********************************************************************/
 
 CT_PORT::CT_PORT(CT_CORE * in_pc_owner) :
-		c_receive(M_PORT_BIND(CT_PORT, f_receive, this)) {
+				c_receive(M_PORT_BIND(CT_PORT, f_receive, this)) {
 
 	//CT_GUARD_LOCK c_guard(_c_rw_lock.write());
 	//_s_cb_rx.pc_core = NULL;

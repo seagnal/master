@@ -158,7 +158,7 @@ struct ST_ROUTING_TABLE {
 		}
 		return false;
 	}
-	bool operator==(ST_ROUTING_TABLE const & other) {
+	bool operator==(ST_ROUTING_TABLE const & other) const {
 		if (ac_ports[0] == other.ac_ports[0])
 			if (ac_ports[1] == other.ac_ports[1])
 				if (ac_ports[2] == other.ac_ports[2])

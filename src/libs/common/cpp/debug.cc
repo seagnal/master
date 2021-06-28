@@ -49,6 +49,7 @@
 /***********************************************************************
  * Includes
  ***********************************************************************/
+#include <boost/stacktrace.hpp>
 #include "debug.hh"
 #include <cxxabi.h>
 #include <dlfcn.h>
@@ -80,7 +81,15 @@ void posix_death_signal(int signum) {
 		printf("SIGNAL: %d\n", signum);
 		break;
 	}
-	CT_DEBUG::f_print_backtrace_cxx();
+	{
+		std::cout << "BOOST BACKTRACE"<<std::endl;
+		std::cout << boost::stacktrace::stacktrace();
+	}
+	{
+		std::cout << "-"<<std::endl;
+		std::cout << "MASTER BACKTRACE"<<std::endl;
+		CT_DEBUG::f_print_backtrace_cxx();
+	}
 	signal(signum, SIG_IGN);
 	//signal(SIGABRT, SIG_DFL);
 	//abort();
@@ -202,25 +211,30 @@ int CT_DEBUG::f_vprintf(int in_i_prio, const char * in_str_msg, va_list ap) {
 	int i_syslog_pri;
 	n = vsnprintf(str_tmp, sizeof(str_tmp), in_str_msg, ap);
 
-	switch (in_i_prio) {
-	case E_DEBUG_TYPE_FATAL:
-		i_syslog_pri = LOG_ALERT;
-		break;
-	case E_DEBUG_TYPE_CRITICAL:
-		i_syslog_pri = LOG_CRIT;
-		break;
-	case E_DEBUG_TYPE_WARNING:
-		i_syslog_pri = LOG_WARNING;
-		break;
-	case E_DEBUG_TYPE_IMP:
-		i_syslog_pri = LOG_NOTICE;
-		break;
-	default:
-		i_syslog_pri = LOG_INFO;
-		break;
-	}
-
-	syslog(i_syslog_pri, "[MASTER] %s", str_tmp);
+  bool b_syslog = false;
+  switch (in_i_prio) {
+  case E_DEBUG_TYPE_FATAL:
+    i_syslog_pri = LOG_ALERT;
+    b_syslog = true;
+    break;
+  case E_DEBUG_TYPE_CRITICAL:
+    i_syslog_pri = LOG_CRIT;
+    b_syslog = true;
+    break;
+  case E_DEBUG_TYPE_WARNING:
+    i_syslog_pri = LOG_WARNING;
+    b_syslog = true;
+    break;
+  case E_DEBUG_TYPE_IMP:
+    i_syslog_pri = LOG_NOTICE;
+    break;
+  default:
+    i_syslog_pri = LOG_INFO;
+    break;
+  }
+  if(b_syslog) {
+	   syslog(i_syslog_pri, "[MASTER] %s", str_tmp);
+  }
 	std::cout << str_tmp << "\n";
 	return n;
 }

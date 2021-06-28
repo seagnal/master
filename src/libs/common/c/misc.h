@@ -77,10 +77,11 @@ uint64_t f_get_time_ns64( void);
 uint64_t f_get_time_ns64_from_time_t(time_t * in_i_time);
 uint64_t f_get_time_ns64_from_timespec(struct timespec * in_s_time);
 void f_dump_stat(struct stat * in_s_sb);
-int f_file_dump( char * in_str_file, char * out_buffer, size_t sz_buffer);
+int f_file_dump( char const * in_str_file, char * out_buffer, size_t sz_buffer);
 size_t f_misc_get_total_system_memory(void);
 size_t f_misc_get_total_free_mem(void);
-int f_set_file_content(char * in_str_file, char * out_buffer, size_t sz_buffer);
+size_t f_misc_get_only_free_mem(void);
+int f_set_file_content(char const * in_str_file, char const * out_buffer, size_t sz_buffer);
 int f_misc_file_exists (const char * in_str_file);
 int f_misc_folder_exists (const char * in_str_file);
 pid_t f_misc_popen2(const char *command, int *infp, int *outfp);
@@ -88,6 +89,7 @@ int f_misc_check_env_i(const char * in_str_varenv, uint32_t const in_f_default_v
 float f_misc_get_cpu_load(void);
 size_t f_misc_get_remaining_space(const char * ac_folder);
 int f_misc_execute(/*std::string const &*/const char * in_str_cmd, int8_t in_b_display);
+int f_misc_is_mounted(const char * in_str_mnt);
 #ifdef __cplusplus
 }
 ;

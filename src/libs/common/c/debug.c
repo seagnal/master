@@ -55,6 +55,7 @@
 #include <signal.h>
 #ifndef __UCLIBC__
 #include <execinfo.h>
+#include <syslog.h>
 #endif
 
 struct ST_DEBUG gs_debug = { NULL, f_debug_va, NULL };
@@ -220,9 +221,11 @@ int f_debug_va(void * in_v_arg, time_t in_s_time, const char * in_str_file,
 	}
 
 	/* print file info */
-	i_nb_char += snprintf(&str_buffer[i_nb_char],
-			sizeof(str_buffer) - i_nb_char, "%s:%s:%d:", pc_type, in_str_func,
-			in_i_line);
+  if (in_e_level != E_DEBUG_TYPE_INFO) {
+  	i_nb_char += snprintf(&str_buffer[i_nb_char],
+  			sizeof(str_buffer) - i_nb_char, "%s:%s:%d:", pc_type, in_str_func,
+  			in_i_line);
+  }
 
 	/* print format with args */
 	i_nb_char += vsnprintf(&str_buffer[i_nb_char],
@@ -257,6 +260,34 @@ int f_debug_va(void * in_v_arg, time_t in_s_time, const char * in_str_file,
 		break;
 	}
 #endif
+
+  {
+    int i_syslog_pri;
+    char b_syslog = 0;
+    switch (in_e_level) {
+    case E_DEBUG_TYPE_FATAL:
+      i_syslog_pri = LOG_ALERT;
+      b_syslog = 1;
+      break;
+    case E_DEBUG_TYPE_CRITICAL:
+      i_syslog_pri = LOG_CRIT;
+      b_syslog = 1;
+      break;
+    case E_DEBUG_TYPE_WARNING:
+      i_syslog_pri = LOG_WARNING;
+      b_syslog = 1;
+      break;
+    case E_DEBUG_TYPE_IMP:
+      i_syslog_pri = LOG_NOTICE;
+      break;
+    default:
+      i_syslog_pri = LOG_INFO;
+      break;
+    }
+    if(b_syslog) {
+      syslog(i_syslog_pri, "[MASTER] %s", str_buffer);
+    }
+  }
 
 	/* print new line */
 	fprintf(fd, "%s\n", str_buffer);
@@ -294,6 +325,8 @@ void f_debug_print_backtrace(void) {
 	free(strings);
 	printf("\n");
 #endif
+
+  CRIT("SEGFAULT");
 
 }
 

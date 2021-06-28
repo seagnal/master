@@ -72,9 +72,22 @@
 bool f_file_exits (const std::string& in_str_name);
 time_t f_file_touch(const std::string& in_str_pathname);
 
+/* Process launch */
+std::string f_misc_get_output(const std::string & in_str_cmd);
+
+/* net settings */
+std::string f_misc_get_ip_address(std::string const & in_str_device);
+
+/* Remove middle of string */
+std::string f_misc_str_remove_middle(std::string const & in_str_line, uint16_t i_size_max, uint16_t i_nb_carac_start, uint16_t i_nb_carac_end);
+
 /* Base 64 */
 std::string f_base64_encode(char const* in_pc_buf, size_t in_sz_buf);
 std::vector<char> f_base64_decode(std::string const& in_str);
+
+/* Thermal zone */
+float f_misc_get_themal_temp(uint32_t in_i_thermal_zone);
+std::string f_misc_get_themal_type(uint32_t in_i_thermal_zone);
 
 /* Math overlap */
 template<typename T>

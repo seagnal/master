@@ -5,11 +5,14 @@ sudo apt-get install scons
 1/ First time
 git clone gitolite@source.seagnal.net:master-core
 cd master-core
+if branch needed:
+	git checkout $branch
+
 for all module needed :
 	git submodule update --init (module)
 or:
-	git submodule update --init
-git submodule foreach -q --recursive 'git checkout $(git config -f $toplevel/.gitmodules submodule.$name.branch || echo master)'
+	git submodule update --init --recursive
+
 git config --global status.submoduleSummary true
 
 2/ add following lines to your .gitconfig

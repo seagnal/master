@@ -186,8 +186,14 @@ public:
 	/* Add method */
 	CT_GUARD<CT_PORT_NODE> add(uint32_t const & in_id);
 
+  /* add_from method */
+  CT_GUARD<CT_PORT_NODE> add_from(uint32_t const & in_id,CT_GUARD<CT_PORT_NODE> & in_pc_node);
+
 	/* Add display method */
 	void display(int i_shift=0);
+
+	/* Update node ID (from old master to master-core) */
+	void f_update_node(std::list<std::pair<uint32_t, uint32_t>> &rlsi_id);
 
 	/* Set data overload */
 	template<typename T2> void set_data(T2 const & in) {
@@ -289,6 +295,9 @@ public:
 					new CT_PORT_NODE(in_id, in_pc_seg, in_off_data, in_sz_data)) {
 
 	}
+
+	void display();
+
 	using CT_GUARD<CT_PORT_NODE>::operator->;
 #if 0
 	operator CT_GUARD<CT_PORT_NODE>&() {

@@ -91,6 +91,9 @@ class CT_MSGQUEUE: public CT_TRANSPORT {
 
 	/* Queue tmp buffer size */
 	size_t _sz_available;
+
+  /* Number of element in queue */
+  uint16_t _i_msg_cnt;
 public:
 	CT_MSGQUEUE();
 	~CT_MSGQUEUE();

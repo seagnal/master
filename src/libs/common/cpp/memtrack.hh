@@ -169,7 +169,7 @@ public:
 	}
 };
 #endif
-#define C_MEMTRACK_BACKTRACE 5
+#define C_MEMTRACK_BACKTRACE 15
 #define C_MEMTRACK_INFO_SIZE (64*16)
 struct ST_MEMTRACK_BT {
 	void * pv_bt[C_MEMTRACK_BACKTRACE];
@@ -222,7 +222,7 @@ struct ST_MEMTRACK_STAT {
 
 #ifdef LF_MEMTRACK_BACKTRACE
 	std::map<ST_MEMTRACK_BT, ST_MEMTRACK_STAT, std::less<ST_MEMTRACK_BT>,
-			CT_MEMTRACK_MALLOCATOR<std::pair<ST_MEMTRACK_BT, ST_MEMTRACK_STAT>>> m_elem;
+			CT_MEMTRACK_MALLOCATOR<std::pair<const ST_MEMTRACK_BT, ST_MEMTRACK_STAT>>> m_elem;
 #endif
 
 	ST_MEMTRACK_STAT() {
@@ -253,7 +253,7 @@ class CT_MEMTRACK {
 
 	CT_SPINLOCK _c_lock_info;
 	std::map<const void *, ST_MEMTRACK_INFO, std::less<const void *>,
-			CT_MEMTRACK_MALLOCATOR<std::pair<const void *, ST_MEMTRACK_INFO>>> _m_info_register;
+			CT_MEMTRACK_MALLOCATOR<std::pair<const void * const, ST_MEMTRACK_INFO>>> _m_info_register;
 	typedef std::map<const void *, ST_MEMTRACK_INFO>::iterator _m_info_iterator_t;
 #if 1
 	void* (*_pf_malloc)(int);

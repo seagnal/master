@@ -189,6 +189,10 @@ public:
 
 	T * operator ->() const {
 		//D("[%p] link to %p",this, _pc_pointer);
+		if(!_pc_pointer) {
+			_CRIT << "EMPTY GUARD FIXME FIXME FIXME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<< typeid(T).name();
+			CT_DEBUG::f_print_backtrace_cxx();
+		}
 		M_ASSERT(_pc_pointer);
 		return _pc_pointer;
 	}

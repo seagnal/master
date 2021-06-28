@@ -18,7 +18,7 @@ CUDAScanner = SCons.Scanner.C.CScanner()
 # the extra .linkinfo files when calling scons -c
 def CUDANVCCStaticObjectEmitter(target, source, env):
         tgt, src = SCons.Defaults.StaticObjectEmitter(target, source, env)
-	print src
+        print(src)
         #for file in src:
         #        lifile = os.path.splitext(src[0].rstr())[0] + '.linkinfo'
         #        tgt.append(lifile)
@@ -45,14 +45,18 @@ def generate(env):
         env['NVCC'] = 'nvcc'
 
         # default flags for the NVCC compiler
-        env['NVCCFLAGS'] = '--compiler-bindir=/usr/bin/g++-5 -std=c++11 --ptxas-options=-v $NVCCGPUFLAGS --compiler-options -Wall,-Werror,-g,-pthread,-fPIC'
+        env['NVCCFLAGS'] = '--compiler-bindir=/usr/bin/$NVCCGPP -std=c++11 --ptxas-options=-v $NVCCGPUFLAGS --compiler-options -Wall,-Werror,-g,-pthread,-fPIC'
         env['STATICNVCCFLAGS'] = ''
         env['SHAREDNVCCFLAGS'] = ''
         env['ENABLESHAREDNVCCFLAG'] = '-shared'
 
         # default NVCC commands
         env['STATICNVCCCMD'] = '$NVCC $_CPPINCFLAGS $_CPPDEFFLAGS $NVCCFLAGS $STATICNVCCFLAGS -o $TARGET -c $SOURCES'
-        env['SHAREDNVCCCMD'] = '$NVCC $_CPPINCFLAGS $_CPPDEFFLAGS $SHAREDNVCCFLAGS $ENABLESHAREDNVCCFLAG -o $TARGET -c $NVCCFLAGS $SOURCES'
+        env['SHAREDNVCCCMD'] = '$NVCC $_CPPINCFLAGS $_CPPDEFFLAGS $SHAREDNVCCFLAGS $ENABLESHAREDNVCCFLAG -rdc=true -dc -o $TARGET -c $NVCCFLAGS $SOURCES'
+        #; $NVCC $SHAREDNVCCFLAGS -dlink -o $TARGET /tmp/test.so
+
+        builder = env.Builder(action=['$NVCC $SHAREDNVCCFLAGS $ENABLESHAREDNVCCFLAG $NVCCFLAGS -dlink -lcufft_static -o $TARGET $SOURCES'])
+        env['BUILDERS']['Dlink'] = builder
 
         # helpers
         home=os.environ.get('HOME', '')
@@ -92,12 +96,12 @@ def generate(env):
                 for path in paths:
                         if os.path.isdir(path):
                                 pathFound = True
-                                print 'scons: CUDA Toolkit found in ' + path
+                                print('scons: CUDA Toolkit found in ' + path)
                                 cudaToolkitPath = path
                                 break
                 if not pathFound:
-                        print "Cannot find the CUDA Toolkit path. Please modify your CUDA_TOOLKIT_PATH env variable"
-			cudaToolkitPath = '/usr/local/cuda'
+                        print("Cannot find the CUDA Toolkit path. Please modify your CUDA_TOOLKIT_PATH env variable")
+                        cudaToolkitPath = '/usr/local/cuda'
 
         env['CUDA_TOOLKIT_PATH'] = cudaToolkitPath
 
@@ -126,7 +130,7 @@ def generate(env):
                 for path in paths:
                         if os.path.isdir(path):
                                 pathFound = True
-                                print 'scons: CUDA SDK found in ' + path
+                                print('scons: CUDA SDK found in ' + path)
                                 cudaSDKPath = path
                                 break
                 if not pathFound:
@@ -145,10 +149,10 @@ def generate(env):
         env.PrependENVPath('PATH', cudaToolkitPath + '/bin')
 
         # add required libraries
-	if env['CUDA_SDK_PATH']:
-	        env.Append(CPPPATH=[cudaSDKPath + '/common/inc'])
-        	env.Append(LIBPATH=[cudaSDKPath + '/lib', cudaSDKPath + '/common/lib' + cudaSDKSubLibDir])
-	env.Append(CPPPATH=[cudaSDKPath + '/common/inc', cudaToolkitPath + '/include'])
+        if env['CUDA_SDK_PATH']:
+            env.Append(CPPPATH=[cudaSDKPath + '/common/inc'])
+            env.Append(LIBPATH=[cudaSDKPath + '/lib', cudaSDKPath + '/common/lib' + cudaSDKSubLibDir])
+        env.Append(CPPPATH=[cudaSDKPath + '/common/inc', cudaToolkitPath + '/include'])
         env.Append(LIBPATH=[cudaToolkitPath + '/lib64'])
         #env.Append(LIBS=['cudart'])
 

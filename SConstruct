@@ -3,7 +3,7 @@ import utils
 import os
 
 #Reset umask
-os.umask(0022)
+os.umask(0o0022)
 
 bs = utils.BuidSystem(ARGUMENTS)
 Export('bs')
@@ -18,6 +18,7 @@ def ConfigureInit(bs):
   bs.ConfigureAddLib(name = 'dl', flags = '-ldl')
   bs.ConfigureAddLib(name = 'bfd', flags = '-lbfd')
   bs.ConfigureAddLib(name = 'openmp', flags = '-fopenmp')
+  # bs.ConfigureAddLib(name = 'check', tool = 'pkg-config --cflags --libs check')
   bs.ConfigureAddLib(name = 'python', tool = 'pkg-config --cflags --libs python3')
   bs.ConfigureAddLib(name = 'eigen', tool = 'pkg-config --cflags --libs eigen3')
   # Execute SConscript while bs.init = True
@@ -33,7 +34,7 @@ def ConfigureInit(bs):
 ## CONFIGURE PART
 if ARGUMENTS.get('config', None) :
   ConfigureInit(bs)
-  print "\nConfiguration is now set to: /!\ "+bs['config'] + " /!\ \n";
+  print("\nConfiguration is now set to: /!\ "+bs['config'] + " /!\ \n");
   if len(COMMAND_LINE_TARGETS) == 0:
     Exit(0)
 
@@ -41,9 +42,9 @@ if ARGUMENTS.get('config', None) :
 bs.ConfigureRead()
 
 # Empty configuration
-print ARGUMENTS.get('config', None)
+print(ARGUMENTS.get('config', None))
 if (not ARGUMENTS.get('config', None)) and ('config' not in bs):
-  print "\nConfiguration must be set !";
+  print("\nConfiguration must be set !");
   Exit(0)
 ################################################################################
 #### LIBRARIES
@@ -106,7 +107,7 @@ for submodule_path in os.listdir('src/plugins/'):
 # Master program
 if 'MASTER_CONFIG' in bs.env_run['ENV']:
     dirs.append('src')
-    print 'MASTER_CONFIG: '+bs.env_run['ENV']['MASTER_CONFIG']
+    print('MASTER_CONFIG: '+bs.env_run['ENV']['MASTER_CONFIG'])
 else:
-    print 'NO MASTER CONFIG!'
+    print('NO MASTER CONFIG!')
 bs.AddSubDirs(bs.env_run['MASTER_DIRS'], bs['buildDir'])

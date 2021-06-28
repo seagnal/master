@@ -103,8 +103,8 @@ CT_HOST::CT_HOST(struct ST_HOST_ARGS * in_ps_args) {
   }
 
  {
-  char * str_db_path = getenv("IDS_DB_PATH");
-  if(str_db_path) {
+  std::string str_db_path = f_looking_for_file("ids.xml","IDS_DB_PATH");
+  if(str_db_path.size()) {
     CT_NODE c_node;
     c_node.from_xml_file(str_db_path);
     /* D("Dumping db node:\n %s", c_node.to_xml().c_str());*/
@@ -467,6 +467,11 @@ int CT_HOST::f_plugin_register(ST_PLUGIN_INFO & in_ps_info) {
 		_DBG << "Registering RESOURCE:" << in_ps_info.ps_desc->str_name
 				<< " version:" << in_ps_info.ps_desc->str_version;
 		break;
+	// unknown PLUGIN
+    default:
+        _DBG << "Registering UNKNOWN plugin: " << in_ps_info.ps_desc->str_name
+			<< " version:" << in_ps_info.ps_desc->str_version;
+		break;
 	}
 #if 0
 	WARN("Registering plugin: %s %s %p %p",
@@ -564,7 +569,7 @@ int CT_HOST::f_core_new(CT_CORE* & out_pc_new,
 		}
 
 		/* Allocate plugin */
-#if 0
+#if 1
 		D("Allocating core %s (%s %s %p %p)",
 				str_name.c_str(), s_info.ps_desc->str_name.c_str(), s_info.ps_desc->str_version.c_str(), s_info.ps_desc->cb_new, s_info.ps_desc);
 #endif
@@ -870,17 +875,23 @@ int CT_HOST::f_init(void) {
 }
 /* Looking for file in master environnement.
  * */
-std::string CT_HOST::f_looking_for_file(std::string in_str_file, std::string in_str_var) {
+std::string CT_HOST::f_looking_for_file(std::string in_str_file, std::string in_str_var, bool in_b_debug) {
   std::string str_file;
   /* Get profile path */
   {
     std::string str_system_file = "/usr/share/master/"+in_str_file;
+    if(in_b_debug) {
+      _DBG << "Lookging for "<< str_system_file;
+    }
     if(f_misc_file_exists(str_system_file.c_str()) == EC_SUCCESS) {
       str_file = str_system_file;
     }
   }
   {
     std::string str_system_file = std::string(getenv("HOME"))+"/.master/"+in_str_file;
+    if(in_b_debug) {
+      _DBG << "Lookging for "<< str_system_file;
+    }
     if(f_misc_file_exists(str_system_file.c_str()) == EC_SUCCESS) {
       str_file = str_system_file;
     }
@@ -890,10 +901,16 @@ std::string CT_HOST::f_looking_for_file(std::string in_str_file, std::string in_
 		char * pc_tmp = getenv(in_str_var.c_str());
 		if(pc_tmp != NULL) {
 	    std::string str_system_file = std::string(pc_tmp)+"/"+in_str_file;
+      if(in_b_debug) {
+        _DBG << "Lookging for "<< str_system_file;
+      }
 	    if(f_misc_file_exists(str_system_file.c_str()) == EC_SUCCESS) {
 	      str_file = str_system_file;
 	    }
 		}
+  }
+  if(in_b_debug) {
+    _DBG << "File selected: " << str_file;
   }
   return str_file;
 }
@@ -903,7 +920,7 @@ std::string const & CT_HOST::f_id_name(uint32_t in_i_id) {
  if(pc_it != _m_id_db.end()) {
   return pc_it->second;
  } else {
-  _CRIT << "ID "<< std::hex << in_i_id << " does not exists";
+  //_CRIT << "ID "<< std::hex << in_i_id << " does not exists";
   return gstr_none;
  }
 }

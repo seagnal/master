@@ -30,6 +30,26 @@ class CT_CLASS_TEST_GOOD gc_var_test32_good;
 struct ST_CLASS_TEST_GOOD gs_var_test33_good;
 ST_CLASS_TEST_GOOD gs_var_test34_good;
 
+
+void f_test_func(ST_STRUCT in_s_warn);
+void f_test_func(ST_STRUCT *out_ps_good);
+void f_test_func(ST_STRUCT &out_rs_good);
+
+void f_func(const ST_TEST & in_rs_const);
+void f_func(ST_TEST const & in_rs_const);
+
+/* FIXME: Est-ce que le comportement doit être différent dans ces cas */
+void f_func(char in_c_char_good);
+void f_func(const char in_c_char_good);
+void f_func(const char * in_ps_char);
+void f_func(char * const in_ps_char);
+void f_func(const char * const in_ps_char);
+
+/* FIXME: Les lignes avec '?' arrêtent l'exécution du script */
+int i_value_good = (0<1) ? 1 : 2;
+
+
+
 void f_func_test35_good(void) {
   CT_GUARD<uint32_t> pi_var_test_good = 0;
   CT_GUARD<CT_TOTO<uint32_t> > pc_var_test_good = 0;
@@ -51,6 +71,11 @@ class CT_CLASS_TEST_GOOD : public CT_CLASS_TEST2_GOOD {
   uint32_t * pi_var_test23_bad;
   uint32_t _ai_var_test_bad;
 public:
+
+  /* FIXME: Les variables publiques doivent-elle avoir un '_' comme préfixe ? */
+  uint32_t * pi_var_test24_good;
+  uint32_t * _pi_var_test25_bad;
+
   void f_func_test_good(float const * in_pf_var_test_good, uint32_t in_sz_var_test_bad, float in_f_var_test_good);
   void f_func_TEST_bad(void);
 }
