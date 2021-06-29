@@ -932,8 +932,11 @@ Description: %s
 
       # Build final library from list of shared object
       if len(sharedCuList):
-          cuObj = lib_app.Dlink(target=library['object']['target']+'.dlink. o', source = sharedCuList)
-          lib_obj['shared'] = lib_app.SharedLibrary(target = library['object']['target'], source = [sharedList, cuObj, sharedCuList])
+          if 'CUDA_DLINK_MODE' in env_app:
+            cuObj = lib_app.Dlink(target=library['object']['target']+'.dlink. o', source = sharedCuList)
+            lib_obj['shared'] = lib_app.SharedLibrary(target = library['object']['target'], source = [sharedList, cuObj, sharedCuList])
+          else:
+            lib_obj['shared'] = lib_app.SharedLibrary(target = library['object']['target'], source = [sharedList, sharedCuList])
       else:
           lib_obj['shared'] = lib_app.SharedLibrary(target = library['object']['target'], source = sharedList)
 

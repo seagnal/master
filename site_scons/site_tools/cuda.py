@@ -48,16 +48,19 @@ def generate(env):
         env['NVCCFLAGS'] = '--compiler-bindir=/usr/bin/$NVCCGPP -std=c++11 --ptxas-options=-v $NVCCGPUFLAGS --compiler-options -Wall,-Werror,-g,-pthread,-fPIC'
         env['STATICNVCCFLAGS'] = ''
         env['SHAREDNVCCFLAGS'] = ''
+
+        env['SHAREDNVCCLINKFLAGS'] = '-lcufft_static'
         env['ENABLESHAREDNVCCFLAG'] = '-shared'
 
         # default NVCC commands
         env['STATICNVCCCMD'] = '$NVCC $_CPPINCFLAGS $_CPPDEFFLAGS $NVCCFLAGS $STATICNVCCFLAGS -o $TARGET -c $SOURCES'
-        env['SHAREDNVCCCMD'] = '$NVCC $_CPPINCFLAGS $_CPPDEFFLAGS $SHAREDNVCCFLAGS $ENABLESHAREDNVCCFLAG -rdc=true -dc -o $TARGET -c $NVCCFLAGS $SOURCES'
+        if 'CUDA_DLINK_MODE' in env:
+            env['SHAREDNVCCCMD'] = '$NVCC $_CPPINCFLAGS $_CPPDEFFLAGS $SHAREDNVCCFLAGS $ENABLESHAREDNVCCFLAG -rdc=true -dc -o $TARGET -c $NVCCFLAGS $SOURCES'
         #; $NVCC $SHAREDNVCCFLAGS -dlink -o $TARGET /tmp/test.so
-
-        builder = env.Builder(action=['$NVCC $SHAREDNVCCFLAGS $ENABLESHAREDNVCCFLAG $NVCCFLAGS -dlink -lcufft_static -o $TARGET $SOURCES'])
-        env['BUILDERS']['Dlink'] = builder
-
+            builder = env.Builder(action=['$NVCC $SHAREDNVCCFLAGS $ENABLESHAREDNVCCFLAG $NVCCFLAGS -dlink $SHAREDNVCCLINKFLAGS -o $TARGET $SOURCES'])
+            env['BUILDERS']['Dlink'] = builder
+        else:
+             env['SHAREDNVCCCMD'] = '$NVCC $_CPPINCFLAGS $_CPPDEFFLAGS $SHAREDNVCCFLAGS $ENABLESHAREDNVCCFLAG -o $TARGET -c $NVCCFLAGS $SOURCES'
         # helpers
         home=os.environ.get('HOME', '')
         programfiles=os.environ.get('PROGRAMFILES', '')
