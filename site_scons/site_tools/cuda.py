@@ -45,7 +45,7 @@ def generate(env):
         env['NVCC'] = 'nvcc'
 
         # default flags for the NVCC compiler
-        env['NVCCFLAGS'] = '--compiler-bindir=/usr/bin/$NVCCGPP -std=c++11 --ptxas-options=-v $NVCCGPUFLAGS --compiler-options -Wall,-Werror,-g,-pthread,-fPIC'
+        env['NVCCFLAGS'] = '--compiler-bindir=/usr/bin/$NVCCGPP -std=c++14 --ptxas-options=-v $NVCCGPUFLAGS --compiler-options -Wall,-Werror,-g,-pthread,-fPIC'
         env['STATICNVCCFLAGS'] = ''
         env['SHAREDNVCCFLAGS'] = ''
 
