@@ -1,3 +1,0 @@
-[submodule "src/libs/bml"]
-	path = src/libs/bml
-	url = https://github.com/johaahn/bml.git
