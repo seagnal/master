@@ -10,7 +10,6 @@ if os.path.exists('../SConstruct'):
     integrated_master=True
     print("Integrated MASTER")
 else:
-    assert(0)
     bs = utils.BuidSystem(ARGUMENTS)
     Export('bs')
     integrated_master=False
