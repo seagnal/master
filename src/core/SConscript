@@ -7,7 +7,7 @@ sw_dict = {
 	'name':'core',
 	'type':'library',
 	'sources':['*.cc','*.c'],
-	'includes':['./','#src/plugins'],
+	'includes':['./'],
 	'defines':[''],
 	'libs':{'shared':['boost','bml-sab','rt'], 'static':['node','common-c','common-cpp']},
 	'install': []

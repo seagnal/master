@@ -5,14 +5,19 @@ import os
 #Reset umask
 os.umask(0o0022)
 
-bs = utils.BuidSystem(ARGUMENTS)
-Export('bs')
-
+if os.path.exists('../SConstruct'):
+    Import('bs')
+    integrated_master=True
+    print("Integrated MASTER")
+else:
+    assert(0)
+    bs = utils.BuidSystem(ARGUMENTS)
+    Export('bs')
+    integrated_master=False
 
 ## Configure function
-def ConfigureInit(bs):
-  # Start of configuration
-  bs.ConfigureStart()
+def ConfigureUpdate(bs):
+
   bs.ConfigureAddLib(name = 'boost', flags = '-lboost_thread -lboost_system -lboost_filesystem -lboost_regex -lrt')
   bs.ConfigureAddLib(name = 'rt', flags = '-lpthread -lrt')
   bs.ConfigureAddLib(name = 'dl', flags = '-ldl')
@@ -27,13 +32,17 @@ def ConfigureInit(bs):
     if os.path.exists(scons_path):
         SConscript(scons_path)
   # End of configuration
-  bs.ConfigureEnd()
-  bs.env_run['ENV']['MASTER_BS_PATH'] = os.getcwd()
 
 
 ## CONFIGURE PART
 if ARGUMENTS.get('config', None) :
-  ConfigureInit(bs)
+  # Start of configuration
+  if not integrated_master:
+      bs.ConfigureStart()
+  ConfigureUpdate(bs)
+  bs.ConfigureEnd()
+  bs.env_run['ENV']['MASTER_BS_PATH'] = os.getcwd()
+
   print("\nConfiguration is now set to: /!\ "+bs['config'] + " /!\ \n");
   if len(COMMAND_LINE_TARGETS) == 0:
     Exit(0)
@@ -80,7 +89,10 @@ bs.env_run['ENV']['MASTER_DEPENDS'] = ""
 #### SOURCE FOLDERS
 ################################################################################
 # Variant dir
-bs['buildDir'] = os.path.join('__out__',bs['remote'],bs['config'])
+if not integrated_master:
+	bs['buildDir'] = os.path.join('__out__',bs['remote'],bs['config'])
+else:
+	bs['buildDir'] = os.path.join('..','__out__',bs['remote'],bs['config'],'master')
 
 
 dirs = [
@@ -97,7 +109,6 @@ bs.env_run['MASTER_DIRS'] = dirs
 #### PARSE SUBMODULE
 ################################################################################
 for submodule_path in os.listdir('src/plugins/'):
-    #print(submodule_path)
     scons_path = os.path.join('src/plugins/', submodule_path, 'SConstruct.sub')
     #print(scons_path)
     if os.path.exists(scons_path):
@@ -105,9 +116,11 @@ for submodule_path in os.listdir('src/plugins/'):
         SConscript(scons_path)
 
 # Master program
-if 'MASTER_CONFIG' in bs.env_run['ENV']:
-    dirs.append('src')
-    print('MASTER_CONFIG: '+bs.env_run['ENV']['MASTER_CONFIG'])
-else:
-    print('NO MASTER CONFIG!')
+if not integrated_master:
+    if 'MASTER_CONFIG' in bs.env_run['ENV']:
+        dirs.append('src')
+        print('MASTER_CONFIG: '+bs.env_run['ENV']['MASTER_CONFIG'])
+    else:
+        print('NO MASTER CONFIG!')
+
 bs.AddSubDirs(bs.env_run['MASTER_DIRS'], bs['buildDir'])

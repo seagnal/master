@@ -453,6 +453,7 @@ class BuidSystem(UserDict):
 
     # os.environ.get('ARGS', '')
     builder = self.env.Builder(action=["sh -c '$PREARGS ${SOURCE} $ARGS'"])
+    print("builder = " + builder.action)
     self.env_run['BUILDERS']['Run'] = builder
     builder = self.env.Builder(action=["gdb --args ${SOURCE} $ARGS"])
     self.env_run['BUILDERS']['Gdb'] = builder
@@ -871,6 +872,7 @@ Description: %s
       lib_app['LINKER'] = remote_dict['PREFIX']+'ld'
       lib_app['AR'] = remote_dict['PREFIX']+'ar'
       lib_app['CPPPATH'].insert(0,remote_dict['INC'])
+      lib_app['CPPPATH'].append('#src/plugins')
 
 
 
