@@ -395,14 +395,13 @@ std::string f_string_strftime_64ns(const char * in_str_fmt,
 	char outstr[1024];
 	time_t t_tmp = (time_t)((uint64_t) (in_i_time) / 1000000000LL);
 	//uint64_t i_ns = in_i_time % 1000000000LL;
-	struct tm *tmp;
-	tmp = localtime(&t_tmp);
-	if (tmp == NULL) {
+    struct tm tmp;
+    if ( NULL == localtime_r(&t_tmp, &tmp)) {
 		perror("localtime");
 		exit(EXIT_FAILURE);
 	}
 
-	if (strftime(outstr, sizeof(outstr), in_str_fmt, tmp) == 0) {
+    if (strftime(outstr, sizeof(outstr), in_str_fmt, &tmp) == 0) {
 		fprintf(stderr, "strftime returned 0");
 		exit(EXIT_FAILURE);
 	}

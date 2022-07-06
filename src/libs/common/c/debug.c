@@ -212,11 +212,10 @@ int f_debug_va(void * in_v_arg, time_t in_s_time, const char * in_str_file,
 
 	/* print time */
 	{
-		struct tm * ps_tm;
-		ps_tm = localtime(&in_s_time);
-		if (1 || ps_tm) {
-			i_nb_char += strftime(&str_buffer[i_nb_char],
-					sizeof(str_buffer) - i_nb_char, "[%H:%M:%S]", ps_tm);
+        struct tm ps_tm;
+        if (1 || localtime_r(&in_s_time, &ps_tm)) {
+            i_nb_char += strftime(&str_buffer[i_nb_char],
+                                  sizeof(str_buffer) - i_nb_char, "[%H:%M:%S]", &ps_tm);
 		}
 	}
 
