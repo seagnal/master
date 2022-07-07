@@ -60,7 +60,8 @@ def generate(env):
             builder = env.Builder(action=['$NVCC $SHAREDNVCCFLAGS $ENABLESHAREDNVCCFLAG $NVCCFLAGS -dlink $SHAREDNVCCLINKFLAGS -o $TARGET $SOURCES'])
             env['BUILDERS']['Dlink'] = builder
         else:
-             env['SHAREDNVCCCMD'] = '$NVCC $_CPPINCFLAGS $_CPPDEFFLAGS $SHAREDNVCCFLAGS $ENABLESHAREDNVCCFLAG -o $TARGET -c $NVCCFLAGS $SOURCES'
+            env['SHAREDNVCCCMD'] = '$NVCC $_CPPINCFLAGS $_CPPDEFFLAGS $SHAREDNVCCFLAGS $ENABLESHAREDNVCCFLAG -o $TARGET -c $NVCCFLAGS $SOURCES'
+
         # helpers
         home=os.environ.get('HOME', '')
         programfiles=os.environ.get('PROGRAMFILES', '')

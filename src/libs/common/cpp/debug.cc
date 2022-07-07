@@ -49,7 +49,6 @@
 /***********************************************************************
  * Includes
  ***********************************************************************/
-#include <boost/stacktrace.hpp>
 #include "debug.hh"
 #include <cxxabi.h>
 #include <dlfcn.h>
@@ -81,15 +80,7 @@ void posix_death_signal(int signum) {
 		printf("SIGNAL: %d\n", signum);
 		break;
 	}
-	{
-		std::cout << "BOOST BACKTRACE"<<std::endl;
-		std::cout << boost::stacktrace::stacktrace();
-	}
-	{
-		std::cout << "-"<<std::endl;
-		std::cout << "MASTER BACKTRACE"<<std::endl;
-		CT_DEBUG::f_print_backtrace_cxx();
-	}
+	CT_DEBUG::f_print_backtrace_cxx();
 	signal(signum, SIG_IGN);
 	//signal(SIGABRT, SIG_DFL);
 	//abort();

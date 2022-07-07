@@ -532,11 +532,6 @@ public :
  */
  std::map<uint32_t, std::string> _m_id_db;
 
- /*!
- * environnement variable Database
- */
- std::map<std::string, std::string> _m_env;
-
 public:
   /*!
    * Constructor from Host argument structrure.

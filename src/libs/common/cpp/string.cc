@@ -397,7 +397,7 @@ std::string f_string_strftime_64ns(const char * in_str_fmt,
 	//uint64_t i_ns = in_i_time % 1000000000LL;
     struct tm tmp;
     if ( NULL == localtime_r(&t_tmp, &tmp)) {
-		perror("localtime");
+        perror("localtime_r");
 		exit(EXIT_FAILURE);
 	}
 
