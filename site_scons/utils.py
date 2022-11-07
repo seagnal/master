@@ -1461,7 +1461,9 @@ Description: %s
 
       # Insert lib to dictionnary
       self['libs'][target] = sw_dict
-      sw_dict['object']['install'] = []
+      # preserve previous plugin 'install' content
+      if not sw_dict['object']['install']:
+          sw_dict['object']['install'] = []
 
       # Module bindingscat
       if sw_dict['object']['api']:
