@@ -782,6 +782,8 @@ Description: %s
         print('Unknown type '+install['type'])
         sys.exit(1)
 
+      if not install['source']:
+        continue
       basename_src = os.path.basename(install['source'])
       src = env.File(install['source'])
       dst = os.path.join(debfolder_scons, dst_folder, basename_src)
