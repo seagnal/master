@@ -1,4 +1,4 @@
-# MASTER – Modular Analysis System for Temporal and Spatial Reception Elements
+# MASTER
 
 [![License: LGPL v2.1](https://img.shields.io/badge/License-LGPL%20v2.1-blue.svg)](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html)
 [![C++](https://img.shields.io/badge/language-C++-blue.svg)](https://isocpp.org/)
