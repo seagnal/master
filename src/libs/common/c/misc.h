@@ -56,6 +56,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <time.h>
 
 /***********************************************************************
  * Defines
@@ -76,6 +77,8 @@ extern "C" {
 uint64_t f_get_time_ns64( void);
 uint64_t f_get_time_ns64_from_time_t(time_t * in_i_time);
 uint64_t f_get_time_ns64_from_timespec(struct timespec * in_s_time);
+uint64_t f_get_time_ns64_from_tm_utc(struct tm in_s_time);
+struct tm f_check_time(struct tm in_s_time);
 void f_dump_stat(struct stat * in_s_sb);
 int f_file_dump( char const * in_str_file, char * out_buffer, size_t sz_buffer);
 size_t f_misc_get_total_system_memory(void);

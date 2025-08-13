@@ -7,9 +7,9 @@ sw_dict = {
 	'name':'core',
 	'type':'library',
 	'sources':['*.cc','*.c'],
-	'includes':['./'],
+	'includes':['./','#src/plugins'],
 	'defines':[''],
-	'libs':{'shared':['boost','bml-sab','rt'], 'static':['node','common-c','common-cpp']},
+	'libs':{'shared':['boost','bml-sab'], 'static':['node','common-c','common-cpp']},
 	'install': []
 }
 if bs['config'] in ['sadc', 'bfu-recorder']:

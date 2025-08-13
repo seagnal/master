@@ -49,6 +49,17 @@ uint64_t f_get_time_ns64_from_timespec(struct timespec * in_s_time) {
   return i_tmp;
 }
 
+uint64_t f_get_time_ns64_from_tm_utc(struct tm in_s_time) {
+  uint64_t i_tmp;
+  i_tmp = timegm(&in_s_time) * 1000000000LL;
+  return i_tmp;
+}
+
+struct tm f_check_time(struct tm in_s_time) {
+  time_t t = mktime(&in_s_time);
+  return *localtime(&t);
+}
+
 void f_dump_stat(struct stat * in_s_sb) {
   switch (in_s_sb->st_mode & S_IFMT) {
   case S_IFBLK:
@@ -109,10 +120,10 @@ int f_file_dump(char const * in_str_file, char * out_buffer, size_t sz_buffer) {
       DBG("%d %x %c", i, out_buffer[i], out_buffer[i]);
     }
 #endif
-    out_buffer[ret - 1] = 0;
-    if (ret == -1) {
+    if (ret < 0) {
       ec = EC_FAILURE;
     } else {
+      out_buffer[ret - 1] = 0;
       ec = EC_SUCCESS;
     }
     close(fd);
@@ -256,7 +267,7 @@ int f_misc_file_exists (const char * in_str_file) {
   struct stat info;
   if( stat( in_str_file, &info ) != 0 ) {
     return EC_FAILURE;
-  }  else if( info.st_mode & S_IFDIR )  {
+  }  else if( (info.st_mode & S_IFMT) == S_IFDIR )  {
     return EC_FAILURE;
   } else {
     return EC_SUCCESS;
@@ -267,7 +278,7 @@ int f_misc_folder_exists (const char * in_str_folder) {
   struct stat info;
   if( stat( in_str_folder, &info ) != 0 ) {
     return EC_FAILURE;
-  }  else if( info.st_mode & S_IFDIR )  {
+  }  else if( (info.st_mode & S_IFMT) == S_IFDIR )  {
     return EC_SUCCESS;
   } else {
     return EC_FAILURE;
@@ -465,7 +476,7 @@ int f_misc_execute(/*std::string const &*/const char * in_str_cmd, int8_t in_b_d
             /* If pid has not changed state */
             } else if (ec_waitpid == 0) {
               /* Kill process after timeout */
-              if(i_timeout > 5e9) {
+              if(i_timeout > 20e9) {
                 //_WARN << "TIMEOUT - KILL PID" << _V(i_pid);
                 printf("(misc.c) TIMEOUT - KILL PID %ld  %s\n", (long int)(i_pid), in_str_cmd);
                 kill(i_pid, SIGKILL);

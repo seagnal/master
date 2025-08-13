@@ -1,5 +1,5 @@
 /***********************************************************************
- ** fir.cc
+ ** interp.hh
  ***********************************************************************
  ** Copyright (c) SEAGNAL SAS
  **
@@ -36,12 +36,16 @@
  **
  ***********************************************************************/
 
+/* define against mutual inclusion */
+#ifndef COMMON_INTERP_HH_
+#define COMMON_INTERP_HH_
+
 /**
- * @file fir.cc
- * Filter functions
+ * @file interp.hh
+ * Interpolation methods.
  *
- * @author SEAGNAL (romain.pignatari@seagnal.fr)
- * @date 2015
+ * @author SEAGNAL (johann.baudy@seagnal.fr)
+ * @date 2025
  *
  * @version 1.0 Original version
  */
@@ -49,97 +53,67 @@
 /***********************************************************************
  * Includes
  ***********************************************************************/
-#include <math.h>
-#include <complex>
-#include "fir.hh"
 
+/***********************************************************************
+ * Defines
+ ***********************************************************************/
 
-template<typename T>
+/* Math stuff */
+#include <vector>
 
-T sinc(T x) {
+template <typename Tx>
+inline int f_findLowerBoundIndex(Tx value, const std::vector<Tx>& x)
+{
+    for (size_t i = 0; i < x.size() - 1; i++) {
+        if (value >= x[i] && value < x[i + 1]) {
+            return i;
+        }
+    }
 
-	if (x) {
-		T y = M_PI*x;
-		return sin(y) / (y);
-	}
+    if (value >= x.back()) return x.size() - 2; // Dernière valeur
+    if (value <= x.front()) return 0; // Première valeur
 
-	return 1;
-
+    return -1; // Erreur
 }
 
-template<typename T>
-T my_hamming(int N, int ii) {
+template <typename Tx, typename Ty>
+int f_interp1(std::vector<Tx> &x, std::vector<Ty> &y, std::vector<Tx> &x_new, std::vector<Ty> &y_new)
+{
+    y_new.reserve(x_new.size());
 
-	T arg = 2*M_PI*((T)ii)/((T)N);
-	T res = 0.54 - 0.46 * cos(arg);
+    std::vector<Tx> dx;
+    std::vector<Ty> dy;
+    std::vector<Ty> slope, intercept;
 
-	return res;
+    dx.reserve(x.size());
+    dy.reserve(x.size());
+    slope.reserve(x.size());
+    intercept.reserve(x.size());
 
+    for (size_t i = 0; i < x.size(); i++) {
+        if (i < x.size() - 1)
+        {
+            dx.push_back(x[i + 1] - x[i]);
+            dy.push_back(y[i + 1] - y[i]);
+            slope.push_back(dy[i] / dx[i]);
+            intercept.push_back(y[i] - (slope[i] * x[i]));
+        }
+        else
+        {
+            dx.push_back(dx[i - 1]);
+            dy.push_back(dy[i - 1]);
+            slope.push_back(slope[i - 1]);
+            intercept.push_back(intercept[i - 1]);
+        }
+    }
+
+    for (size_t i = 0; i < x_new.size(); i++)
+    {
+        int idx = f_findLowerBoundIndex<Tx>(x_new[i], x);
+        y_new.push_back(slope[idx] * x_new[i] + intercept[idx]);
+    }
+
+    return EC_SUCCESS;
 }
 
-template<typename T>
-T sum(T *l, int len) {
-
-	int i;
-	double s = 0;
-	for (i=0;i<len;i++) {
-		s += l[i];
-	}
-
-	return s;
-
-}
-
-template<typename T>
-void fir1(T *out, int N, T cutoff) {
-  //M_ASSERT(cutoff <= 1);
-	int i;
-	for (i=0;i<N+1;i++){
-		out[i] = sinc<T>(cutoff * (((T)i)-((T)(N))/2.0)) * my_hamming<T>(N, i);
-	}
-
-	T s = sum(out, N+1);
-
-	for (i=0;i<N+1;i++){
-		out[i] /= s;
-	}
-}
-
-
-template<typename T>
-std::complex<T> sum_complex(std::complex<T> *l, int len) {
-
-	int i;
-	std::complex<double> s(0.0,0.0);
-	for (i=0;i<len;i++) {
-		s += l[i];
-	}
-
-	std::complex<T> out(s.real(),s.imag());
-	return out;
-
-}
-
-template<typename T>
-void fir1_complex(std::complex<T> *out, int N, T cutoff) {
-  //M_ASSERT(cutoff <= 1);
-	int i;
-	for (i=0;i<N+1;i++){
-		out[i] = sinc<T>(cutoff * (((T)i)-((T)(N))/2.0)) * my_hamming<T>(N, i);
-	}
-
-	std::complex<T> s = sum_complex(out, N+1);
-
-	for (i=0;i<N+1;i++){
-		out[i] /= s;
-	}
-}
-
-template void fir1<float>(float *out, int N, float cutoff);
-template void fir1<double>(double *out, int N, double cutoff);
-
-template void fir1_complex<float>(std::complex<float> *out, int N, float cutoff);
-template void fir1_complex<double>(std::complex<double> *out, int N, double cutoff);
-
-template float sinc<float>(float x);
-template double sinc<double>(double x);
+#endif

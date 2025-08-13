@@ -49,23 +49,30 @@
 /***********************************************************************
  * Includes
  ***********************************************************************/
+#ifndef PLATFORM_XENIAL
+#include <boost/stacktrace.hpp>
+#endif
 #include "debug.hh"
 #include <cxxabi.h>
-#include <dlfcn.h>
+#ifndef _WIN32
+    #include <syslog.h>
+    #include <dlfcn.h>
+#endif
 #include <cpp/string.hh>
 
 
-#ifndef FF_NO_BT
+#if !defined(FF_NO_BT) &&  !defined(_WIN32)
 #include <execinfo.h>
 #endif
+
 #include <signal.h>
 #include <list>
 
 #ifndef FF_NO_BT
-#define LF_BFD
-#ifdef LF_BFD
-#include <bfd.h>
-#endif
+    #define LF_BFD
+    #if defined(LF_BFD)  &&  !defined(_WIN32)
+    #include <bfd.h>
+    #endif
 #endif
 
 void posix_death_signal(int signum) {
@@ -80,7 +87,17 @@ void posix_death_signal(int signum) {
 		printf("SIGNAL: %d\n", signum);
 		break;
 	}
-	CT_DEBUG::f_print_backtrace_cxx();
+#ifndef PLATFORM_XENIAL
+	{
+		std::cout << "BOOST BACKTRACE"<<std::endl;
+		std::cout << boost::stacktrace::stacktrace();
+	}
+#endif
+	{
+		std::cout << "-"<<std::endl;
+		std::cout << "MASTER BACKTRACE"<<std::endl;
+		CT_DEBUG::f_print_backtrace_cxx();
+	}
 	signal(signum, SIG_IGN);
 	//signal(SIGABRT, SIG_DFL);
 	//abort();
@@ -94,8 +111,7 @@ void CT_DEBUG::f_signal_init(void) {
 
 void CT_DEBUG::f_get_backtrace(ST_DEBUG_BACKTRACE & out_s_bt) {
 
-#ifndef FF_NO_BT
-//#if 0
+#if !defined(FF_NO_BT) &&  !defined(_WIN32)
 	out_s_bt.sz_buffer = backtrace(out_s_bt.av_buffer, C_DEBUG_BACKTRACE_SIZE);
 #else
 	out_s_bt.sz_buffer = 0;
@@ -104,7 +120,7 @@ void CT_DEBUG::f_get_backtrace(ST_DEBUG_BACKTRACE & out_s_bt) {
 
 size_t CT_DEBUG::f_get_backtrace(void ** out_pv_bt, size_t in_sz_bt) {
 
-#ifndef FF_NO_BT
+#if !defined(FF_NO_BT) &&  !defined(_WIN32)
 	return backtrace(out_pv_bt, in_sz_bt);
 #else
 	return 0;
@@ -151,7 +167,7 @@ std::string CT_DEBUG::f_demangle_cxx(const char* in_str_name) {
 }
 
 void CT_DEBUG::f_print_backtrace_cxx_simple(ST_DEBUG_BACKTRACE & in_s_bt) {
-#ifndef FF_NO_BT
+#if !defined(FF_NO_BT) &&  !defined(_WIN32)
 	int nptrs = in_s_bt.sz_buffer;
 
 	char **strings;
@@ -193,15 +209,16 @@ void CT_DEBUG::f_print_backtrace_cxx_simple(ST_DEBUG_BACKTRACE & in_s_bt) {
 	free(strings);
 #else
 	printf("BT not supported\n");
-#endif
+#endif // #if !defined(FF_NO_BT) &&  !defined(_WIN32)
 }
 
 int CT_DEBUG::f_vprintf(int in_i_prio, const char * in_str_msg, va_list ap) {
 	int n;
 	char str_tmp[4096];
-	int i_syslog_pri;
-	n = vsnprintf(str_tmp, sizeof(str_tmp), in_str_msg, ap);
 
+	n = vsnprintf(str_tmp, sizeof(str_tmp), in_str_msg, ap);
+#if !defined(_WIN32)
+   int i_syslog_pri;
   bool b_syslog = false;
   switch (in_i_prio) {
   case E_DEBUG_TYPE_FATAL:
@@ -226,6 +243,7 @@ int CT_DEBUG::f_vprintf(int in_i_prio, const char * in_str_msg, va_list ap) {
   if(b_syslog) {
 	   syslog(i_syslog_pri, "[MASTER] %s", str_tmp);
   }
+# endif //#if !defined(_WIN32)
 	std::cout << str_tmp << "\n";
 	return n;
 }
@@ -241,6 +259,7 @@ int CT_DEBUG::f_printf(int in_i_prio, const char * in_str_msg, ...) {
 }
 
 const char * CT_DEBUG::f_print_backtrace_cxx_single_symname(void * in_pv_address, bool in_b_full) {
+#if !defined(_WIN32)
 	Dl_info dlinfo;
 	const char *symname;
 	const char *out_string = NULL;
@@ -314,12 +333,15 @@ const char * CT_DEBUG::f_print_backtrace_cxx_single_symname(void * in_pv_address
 #endif
 	if (demangled)
 		free(demangled);
-
-	return out_string;
+    return out_string;
+#else // #if !defined(_WIN32)
+    return nullptr;
+#endif
 }
 
 std::string CT_DEBUG::f_print_backtrace_cxx_single(void * in_pv_address, bool in_b_full) {
 	std::string out_string;
+ #if !defined(_WIN32)
 	Dl_info dlinfo;
 	const char *symname;
 	char *demangled;
@@ -393,7 +415,7 @@ std::string CT_DEBUG::f_print_backtrace_cxx_single(void * in_pv_address, bool in
 #endif
 	if (demangled)
 		free(demangled);
-
+#endif // #if !defined(_WIN32)
 	return out_string;
 }
 
@@ -402,7 +424,7 @@ void CT_DEBUG::f_print_backtrace_cxx(ST_DEBUG_BACKTRACE & in_s_bt) {
 }
 
 void CT_DEBUG::f_print_backtrace_cxx(void * const * in_pv_address,size_t in_sz_address, bool in_b_full) {
-#ifndef FF_NO_BT
+#if !defined(FF_NO_BT) &&  !defined(_WIN32)
 	int nptrs = in_sz_address;
 
 	char **strings;
@@ -430,7 +452,7 @@ void CT_DEBUG::f_print_backtrace_cxx(void * const * in_pv_address,size_t in_sz_a
 	free(strings);
 #else
 	printf("BT not supported\n");
-#endif
+#endif // #if !defined(FF_NO_BT) &&  !defined(_WIN32)
 }
 
 static std::list<void const *> gl_dbg;

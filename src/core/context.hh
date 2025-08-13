@@ -128,6 +128,9 @@ public:
 	/* Custom host methods - join */
 	virtual int f_join(void);
 
+	/* Custom host methods - set_priority */
+	virtual int f_set_priority(int16_t in_i_priority);
+
 	/* Push extra callback */
 	int f_push_extra(struct ST_HOST_CONTEXT_CB_EXTRA & in_s_cb);
 

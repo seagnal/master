@@ -390,6 +390,25 @@ int CT_QT_NOGUI_CONTEXT::f_join(void) {
 	return EC_SUCCESS;
 }
 
+
+int CT_QT_NOGUI_CONTEXT::f_set_priority(int16_t in_i_priority){
+	QThread::Priority QPrio;
+	switch (in_i_priority) {
+		case 0:{QPrio = QThread::IdlePriority;break;}
+		case 1:{QPrio = QThread::LowestPriority;break;}
+		case 2:{QPrio = QThread::LowPriority;break;}
+		case 3:{QPrio = QThread::NormalPriority;break;}
+		case 4:{QPrio = QThread::HighPriority;break;}
+		case 5:{QPrio = QThread::HighestPriority;break;}
+		case 6:{QPrio = QThread::TimeCriticalPriority;break;}
+		case 7:{QPrio = QThread::InheritPriority;break;}
+		default:{QPrio = QThread::NormalPriority;break;}
+
+	}
+	this->setPriority(QPrio);
+	return EC_SUCCESS;
+}
+
 /**** TIMEOUT ****/
 CT_QT_NOGUI_TIMEOUT::CT_QT_NOGUI_TIMEOUT() :
 		CT_HOST_TIMEOUT() {

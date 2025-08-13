@@ -53,6 +53,7 @@
 #include <cpp/debug.hh>
 #include <string.h>
 #include <stdarg.h>
+#include <map>
 
 #include <sstream>
 #include <iomanip>
@@ -60,6 +61,7 @@
 #include <string>
 #include <wchar.h>
 #include <math.h>
+#include <fstream>
 
 std::string f_string_expand (std::string const & in) {
 	if (in.size () < 1) return in;
@@ -331,7 +333,7 @@ void f_string_human_readable_number(std::string & out_str, uint64_t in_i_number,
 	}
 
 	d_value *= d_lim;
-	out_str = f_string_format("%u %s", uint(d_value), str_suffix);
+    out_str = f_string_format("%u %s", (unsigned int)(d_value), str_suffix);
 }
 std::string const f_string_human_readable_number(uint64_t in_i_number,
 		ET_STRING_HUMAN_READABLE_MODE in_e_mode) {
@@ -350,12 +352,12 @@ std::string const f_string_human_readable_number(uint64_t in_i_number,
 void f_string_human_readable_time(std::string & out_str, uint64_t in_i_time) {
 	std::string str_day;
 	double d_value = double(in_i_time) / (1e9 * 60 * 60 * 24);
-	uint i_day = floor(d_value);
+    unsigned int i_day = floor(d_value);
 
-	uint i_hours;
-	uint i_minutes;
-	uint i_seconds;
-	uint i_msecs;
+    unsigned int i_hours;
+    unsigned int i_minutes;
+    unsigned int i_seconds;
+    unsigned int i_msecs;
 
 	d_value -= i_day;
 	d_value *= 24;
@@ -395,13 +397,14 @@ std::string f_string_strftime_64ns(const char * in_str_fmt,
 	char outstr[1024];
 	time_t t_tmp = (time_t)((uint64_t) (in_i_time) / 1000000000LL);
 	//uint64_t i_ns = in_i_time % 1000000000LL;
-    struct tm tmp;
-    if ( NULL == localtime_r(&t_tmp, &tmp)) {
-        perror("localtime_r");
+	struct tm *tmp;
+	tmp = localtime(&t_tmp);
+	if (tmp == NULL) {
+		perror("localtime");
 		exit(EXIT_FAILURE);
 	}
 
-    if (strftime(outstr, sizeof(outstr), in_str_fmt, &tmp) == 0) {
+	if (strftime(outstr, sizeof(outstr), in_str_fmt, tmp) == 0) {
 		fprintf(stderr, "strftime returned 0");
 		exit(EXIT_FAILURE);
 	}
@@ -470,4 +473,52 @@ std::string f_string_from_buffer(uint32_t * in_pc_buffer, size_t in_sz_buffer) {
 				<< (uint32_t) in_pc_buffer[i] << " ";
 	}
 	return ss.str();
+}
+
+
+uint64_t f_string_to_seconds(std::string const & in_str_input) {
+	std::map<std::string, int> units = {
+			{"y", 366*24*60*60},
+			{"year", 366*24*60*60},  // 365.25 days/year * 24 hours/day * 60 minutes/hour * 60 seconds/minute
+	    {"years", 366*24*60*60},
+			{"m", 30*24*60*60},
+	    {"month", 30*24*60*60},  // 30 days/month * 24 hours/day * 60 minutes/hour * 60 seconds/minute
+	    {"months", 30*24*60*60},
+			{"w", 7*24*60*60},
+	    {"week", 7*24*60*60},  // 7 days/week * 24 hours/day * 60 minutes/hour * 60 seconds/minute
+	    {"weeks", 7*24*60*60}
+	};
+
+	int value = 0;
+	std::string unit;
+
+	for (char c : in_str_input) {
+	    if (std::isdigit(c)) {
+	        value = value * 10 + (c - '0');
+	    } else {
+	        unit += std::tolower(c);
+	    }
+	}
+
+	if (units.find(unit)!= units.end()) {
+	    return value * units[unit];
+	} else {
+	    throw std::invalid_argument("Invalid unit");
+	}
+}
+
+std::string f_string_from_file(const std::string& in_str_filename) {
+    std::ifstream file(in_str_filename);
+    if (!file) {
+        throw std::runtime_error("Failed to open file: " + in_str_filename);
+    }
+
+    file.seekg(0, std::ios::end);
+    size_t fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    std::string content(fileSize, '\0');
+    file.read(&content[0], fileSize);
+
+    return content;
 }

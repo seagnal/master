@@ -84,6 +84,12 @@ int CT_HOST_CONTEXT::f_join(void) {
 	return EC_FAILURE;
 }
 
+int CT_HOST_CONTEXT::f_set_priority(int16_t in_i_priority) {
+	M_BUG();
+	return EC_FAILURE;
+}
+
+
 int CT_HOST_CONTEXT::f_push_extra(struct ST_HOST_CONTEXT_CB_EXTRA & in_s_cb) {
 	CT_GUARD_LOCK c_guard(_c_lock);
 	//_DBG << *in_s_cb.pc_data;

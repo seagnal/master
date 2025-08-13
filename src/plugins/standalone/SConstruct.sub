@@ -1,0 +1,21 @@
+Import('bs')
+import os
+
+if bs.init:
+  if bs['config'] == 'standalone':
+    bs.ConfigureAddLib(name = 'eigen', tool = 'pkg-config --cflags --libs eigen3')
+
+if not bs.init:
+################################################################################
+#### LIBRARIES
+################################################################################
+################################################################################
+#### FOLDERS
+################################################################################
+  if bs['config'] == 'standalone':
+    bs.env_run['MASTER_DIRS'].append('master/src')
+################################################################################
+#### CONFIGURATION FILE
+################################################################################
+  if bs['config'] == 'standalone':
+      bs.env_run['ENV']['MASTER_CONFIG'] = os.path.abspath('config/example.xml');

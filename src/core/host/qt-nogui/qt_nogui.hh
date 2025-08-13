@@ -94,6 +94,7 @@ public:
 
 	int f_init(void);
 	int f_join(void);
+	int f_set_priority(int16_t in_i_priority);
 };
 
 class CT_QT_NOGUI_HOST: public QApplication, public CT_HOST {

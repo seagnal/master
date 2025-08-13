@@ -197,48 +197,33 @@ public:
 		return ec;
 	}
 #endif
-    int f_get_nearest(Td & out_res, Tt const & in_time, bool in_b_discard_first = false) {
-        int ec;
-        result_range c_res;
+	int f_get_nearest(Td & out_res, Tt const & in_time, bool in_b_discard_first = false) {
+		int ec;
+		result_range c_res;
 
-        ec = f_get_range(c_res, in_time, in_time);
-        if (ec != EC_SUCCESS) {
-            goto out_err;
-        }
-        /* At least lower bound is found */
-        if(c_res.first->first == in_time) {
-            out_res = c_res.first->second;
-        } else {
-            if(in_b_discard_first) {
-                /* Discard if first element match range */
-                if(c_res.first == f_begin()) {
-                    ec = EC_FAILURE;
-                    goto out_err;
-                }
-            }
+		ec = f_get_range(c_res, in_time, in_time);
+		if (ec != EC_SUCCESS) {
+			goto out_err;
+		}
+		/* At least lower bound is found */
+		if(c_res.first->first == in_time) {
+			out_res = c_res.first->second;
+		} else {
+			if(in_b_discard_first) {
+				/* Discard if first element match range */
+				if(c_res.first == f_begin()) {
+					ec = EC_FAILURE;
+					goto out_err;
+				}
+			}
 
-            if (c_res.second == _m_values.end()) {
-                out_res = c_res.first->second;
-            } else {
-                Tt i_time_first = c_res.first->first;
-                Tt i_time_second = c_res.second->first;
-                //_DBG << _V(i_time_first) << _V(in_time) << _V(i_time_second) << _V(_m_values.begin()->first);
-                //M_ASSERT(i_time_first <= in_time);
-                //M_ASSERT(i_time_second >= in_time);
-                Tt i_diff_first = M_ABS(in_time - i_time_first);
-                Tt i_diff_second = M_ABS(i_time_second - in_time);
-                if (i_diff_second > i_diff_first) {
-                    out_res = c_res.first->second;
-                } else {
-                    out_res = c_res.second->second;
-                }
-            }
-        }
+			out_res = c_res.first->second;
+		}
 
-        ec = EC_SUCCESS;
-    out_err:
-        return ec;
-    }
+		ec = EC_SUCCESS;
+		out_err:
+		return ec;
+	}
 
 
 	Td & f_get_nearest(Tt const & in_time) {

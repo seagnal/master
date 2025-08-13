@@ -59,6 +59,9 @@ template<typename T>
 void fir1(T *out, int N, T cutoff);
 
 template<typename T>
+void fir1_complex(std::complex<T> *out, int N, T cutoff);
+
+template<typename T>
 T sinc(T x);
 
 #endif /* FIR_HH_ */

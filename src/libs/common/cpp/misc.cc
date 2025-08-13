@@ -54,6 +54,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <utime.h>
@@ -68,6 +69,11 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
+#include <cpp/string.hh>
+#include <boost/algorithm/string.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/operations.hpp>
+#include <regex>
 
 static int __f_file_dump(char const * in_str_file, char * out_buffer, size_t sz_buffer) {
   int fd = open(in_str_file, O_RDONLY);
@@ -92,6 +98,19 @@ static int __f_file_dump(char const * in_str_file, char * out_buffer, size_t sz_
   return ec;
 }
 
+
+// Function to generate a random string of given length
+std::string f_misc_generate_random_string(int in_i_length)
+{
+	std::string str = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	int n = str.length();
+
+	std::string res = "";
+	for (int i = 0; i < in_i_length; i++)
+		res = res + str[rand() % n];
+
+	return res;
+}
 
 
 std::string f_misc_get_output(const std::string & in_str_cmd) {
@@ -271,14 +290,20 @@ std::string f_misc_get_ip_address(std::string const & in_str_device){
     /* I want to get an IPv4 IP address */
     ifr.ifr_addr.sa_family = AF_INET;
     /* I want IP address attached to device */
-    strncpy(ifr.ifr_name, in_str_device.c_str(), M_MIN(IFNAMSIZ-1,int(in_str_device.size())));
+    size_t sz_len = M_MIN(IFNAMSIZ-1,int(in_str_device.size()));
+    strncpy(ifr.ifr_name, in_str_device.c_str(), sz_len);
+    ifr.ifr_name[sz_len] = 0;
+
+
     ec  = ioctl(fd, SIOCGIFADDR, &ifr);
     if (ec < 0){
+      _CRIT << "Unable to get SIOCGIFADDR of" << ifr.ifr_name;
       goto out_free_socket;
     }
     if(inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr) != NULL){
       res = inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
     }
+    _DBG << "ip address of "<< ifr.ifr_name << "is" << res;
   }
   out_free_socket:
   close(fd);
@@ -287,17 +312,35 @@ std::string f_misc_get_ip_address(std::string const & in_str_device){
   return res;
 }
 
+uint64_t f_get_size_file(const std::string& in_str_name){
+	struct stat s_buffer;
 
+	bool b_file_exist = f_file_exits(in_str_name);
+	M_ASSERT(b_file_exist);
+
+	stat(in_str_name.c_str(), &s_buffer);
+	return ((uint64_t)s_buffer.st_size);
+}
+
+
+std::string f_misc_str_remove_start(std::string const & in_str_line, uint16_t i_size_max){
+	return f_misc_str_remove_middle(in_str_line, i_size_max, 0, i_size_max - 5);
+}
+
+std::string f_misc_str_remove_end(std::string const & in_str_line, uint16_t i_size_max){
+	return f_misc_str_remove_middle(in_str_line, i_size_max, i_size_max - 5, 0);
+}
 
 /* Replace middle of string with [...] to force maximum string size */
 std::string f_misc_str_remove_middle(std::string const & in_str_line, uint16_t i_size_max, uint16_t i_nb_carac_start=0, uint16_t i_nb_carac_end=0){
 
-  assert(i_size_max >= i_nb_carac_start + i_nb_carac_end);
+  std::string str_middle = "[...]";
+
+  assert(i_size_max >= i_nb_carac_start + i_nb_carac_end + str_middle.size());
 
   if (in_str_line.size() < i_size_max) {
 	  return in_str_line;
   } else {
-	  std::string str_middle = "[...]";
 	  if (i_nb_carac_start + str_middle.size() + i_nb_carac_end > i_size_max) {
 		  uint16_t i_extra_caracters = i_nb_carac_start + str_middle.size() + i_nb_carac_end - i_size_max;
 		  i_nb_carac_start -= (i_extra_caracters+1) / 2;
@@ -349,4 +392,66 @@ std::string f_misc_get_themal_type(uint32_t in_i_thermal_zone){
   }
   //printf("\n Valeur lu dans :: </proc/loadavg> == %s \n",buffer_load_cpu );
   return str_type;
+}
+
+std::list<std::string> f_misc_file_list(
+		std::string const in_str_path, std::string const & in_str_prefix,
+		std::string const & in_str_suffix, bool const in_b_debug) {
+	std::list<std::string> _l_tmp;
+	std::string str_path(in_str_path);
+
+	std::vector<std::string> c_paths;
+	boost::split(c_paths, str_path, boost::is_any_of(";"));
+
+	/* Parse all path split with ; */
+	for (std::vector<std::string>::const_iterator c_it = c_paths.begin();
+			c_it != c_paths.end(); ++c_it) {
+		boost::filesystem::path someDir(*c_it);
+		boost::filesystem::directory_iterator end_iter;
+
+		auto str_re = f_string_format("(.*)(/)(%s)(.*)(\\.)%s",
+				in_str_prefix.c_str(), in_str_suffix.c_str());
+		const std::regex c_filter(str_re);
+
+    if(in_b_debug) {
+      D("Path: %s %s", someDir.generic_string().c_str(), str_re.c_str());
+    }
+		if (boost::filesystem::exists(someDir)
+				&& boost::filesystem::is_directory(someDir)) {
+
+			/* Parse all file of current folder */
+			for (boost::filesystem::directory_iterator dir_iter(someDir);
+					dir_iter != end_iter; ++dir_iter) {
+				/* Check that current file is regular */
+				if (boost::filesystem::is_regular_file(dir_iter->status())) {
+					std::string str_tmp = dir_iter->path().generic_string();
+
+          if(in_b_debug) {
+            D("Match: %s",str_tmp.c_str());
+          }
+					/* Match plugin regexp */
+					if (std::regex_match(str_tmp.begin(), str_tmp.end(),
+							c_filter)) {
+						_l_tmp.push_back(str_tmp);
+					}
+				}
+			}
+		}
+	}
+
+	return _l_tmp;
+}
+
+int f_misc_create_folder(std::string const & in_str_path) {
+  try {
+    boost::filesystem::path c_folder_path(in_str_path);
+    if (!boost::filesystem::exists(c_folder_path)) {
+        boost::filesystem::create_directory(c_folder_path);
+        return EC_SUCCESS;
+    }
+    return EC_BYPASS;
+  } catch (std::exception const & e) {
+    _CRIT << "Failed to create folder: " << e.what();
+    return EC_FAILURE;
+  }
 }

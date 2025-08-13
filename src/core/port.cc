@@ -373,7 +373,7 @@ std::string const CT_PORT_NODE::get_data<>(void) const {
 	size_t sz_str = _s_segment.size();
 	M_ASSERT(sz_str < 64*1024);
 	if (sz_str) {
-		char str_tmp[sz_str];
+		char str_tmp[sz_str] = {0,};
 		memcpy_to_buffer(str_tmp, sz_str);
 		return std::string(str_tmp, sz_str);
 	} else {

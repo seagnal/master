@@ -56,7 +56,7 @@ CT_QT_HOST::CT_QT_HOST(struct ST_HOST_ARGS * in_ps_args) :
 	 {
 		 QPixmap c_pix(":/images/splash.png");
 
-		 QSplashScreen * pc_new = new QSplashScreen(NULL,c_pix);
+		 QSplashScreen * pc_new = new QSplashScreen(c_pix);
 
 		 pc_new->show();
 		 pc_new->showMessage(QString(M_STR_VERSION),

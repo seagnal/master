@@ -1,5 +1,5 @@
 /***********************************************************************
- ** fir.cc
+ ** file_mmap.hh
  ***********************************************************************
  ** Copyright (c) SEAGNAL SAS
  **
@@ -36,12 +36,15 @@
  **
  ***********************************************************************/
 
+/* define against mutual inclusion */
+#ifndef FILE_MMAP_HH_
+#define FILE_MMAP_HH_
+
 /**
- * @file fir.cc
- * Filter functions
+ * @file file_mmap.hh
  *
- * @author SEAGNAL (romain.pignatari@seagnal.fr)
- * @date 2015
+ * @author SEAGNAL (nicolas.massot@seagnal.fr)
+ * @date Jan , 2020
  *
  * @version 1.0 Original version
  */
@@ -49,97 +52,99 @@
 /***********************************************************************
  * Includes
  ***********************************************************************/
-#include <math.h>
-#include <complex>
-#include "fir.hh"
+#include <string>
+#include <vector>
+#include <limits>
+#include <c/common.h>
+#include <cpp/debug.hh>
+#include "misc.hh"
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <utime.h>
+
+#include <stdio.h>
+#include <string.h>
+
+class CT_FILE_MMAP
+{
+	private:
+		int _i_size_buffer;
+		uint64_t _i_size_file;
+		int _i_file_descriptor;
+
+	public:
+
+    CT_FILE_MMAP();
+    ~CT_FILE_MMAP();
+		void f_open(const std::string& in_str_name);
+
+		template<typename T>
+		void f_close(T *& dst);
+
+		template<typename T>
+		T *  f_get_buffer();
+		uint64_t f_get_size_file_mmap();
+		int f_get_file_descriptor();
 
 
-template<typename T>
+};
 
-T sinc(T x) {
+CT_FILE_MMAP::CT_FILE_MMAP(){}
+CT_FILE_MMAP::~CT_FILE_MMAP(){}
 
-	if (x) {
-		T y = M_PI*x;
-		return sin(y) / (y);
+void CT_FILE_MMAP::f_open(const std::string& in_str_name){
+	_i_file_descriptor = open(in_str_name.c_str(), O_LARGEFILE | O_CREAT |O_RDWR, S_IRUSR | S_IWUSR | S_IXUSR | S_IXOTH);
+	if (_i_file_descriptor < 0) // Couldn't open that path.
+			{
+		throw _CRIT << ": Couldn't open() file \"" << in_str_name;
 	}
 
-	return 1;
-
+	// Get size
+	_i_size_file = f_get_size_file(in_str_name);
 }
 
 template<typename T>
-T my_hamming(int N, int ii) {
+void CT_FILE_MMAP::f_close(T *& dst){
 
-	T arg = 2*M_PI*((T)ii)/((T)N);
-	T res = 0.54 - 0.46 * cos(arg);
+ int ec = munmap(dst, _i_size_file);
+ if (ec < 0) // Couldn't open that path.
+		 {
+	 throw _CRIT << ": Couldn't munmap() file \"";
+ }
 
-	return res;
+ ec = close(_i_file_descriptor);
+ if (ec < 0) // Couldn't close the file
+{
+	throw _CRIT << ": Couldn't close() the mmap file \"";
+ }
+}
 
+uint64_t CT_FILE_MMAP::f_get_size_file_mmap(){
+	return _i_size_file;
+}
+
+int CT_FILE_MMAP::f_get_file_descriptor(){
+	return _i_file_descriptor;
 }
 
 template<typename T>
-T sum(T *l, int len) {
-
-	int i;
-	double s = 0;
-	for (i=0;i<len;i++) {
-		s += l[i];
+T * CT_FILE_MMAP::f_get_buffer(){
+	T * dst = NULL;
+	dst = (T *)mmap(NULL, _i_size_file, PROT_READ | PROT_WRITE, MAP_SHARED, _i_file_descriptor, 0);
+	if(dst == MAP_FAILED){
+		std::cout << "ERROR MMAP : " << errno << std::endl;
+		int ec = close(_i_file_descriptor);
+		if (ec < 0) // Couldn't close the file
+	 	{
+	 		throw _CRIT << ": Mmap Error : Couldn't close() the mmap file \"";
+	  }
+		throw _CRIT << ": Mmap Error : Couldn't mmap() the file \"";
 	}
-
-	return s;
-
+ return dst;
 }
 
-template<typename T>
-void fir1(T *out, int N, T cutoff) {
-  //M_ASSERT(cutoff <= 1);
-	int i;
-	for (i=0;i<N+1;i++){
-		out[i] = sinc<T>(cutoff * (((T)i)-((T)(N))/2.0)) * my_hamming<T>(N, i);
-	}
-
-	T s = sum(out, N+1);
-
-	for (i=0;i<N+1;i++){
-		out[i] /= s;
-	}
-}
-
-
-template<typename T>
-std::complex<T> sum_complex(std::complex<T> *l, int len) {
-
-	int i;
-	std::complex<double> s(0.0,0.0);
-	for (i=0;i<len;i++) {
-		s += l[i];
-	}
-
-	std::complex<T> out(s.real(),s.imag());
-	return out;
-
-}
-
-template<typename T>
-void fir1_complex(std::complex<T> *out, int N, T cutoff) {
-  //M_ASSERT(cutoff <= 1);
-	int i;
-	for (i=0;i<N+1;i++){
-		out[i] = sinc<T>(cutoff * (((T)i)-((T)(N))/2.0)) * my_hamming<T>(N, i);
-	}
-
-	std::complex<T> s = sum_complex(out, N+1);
-
-	for (i=0;i<N+1;i++){
-		out[i] /= s;
-	}
-}
-
-template void fir1<float>(float *out, int N, float cutoff);
-template void fir1<double>(double *out, int N, double cutoff);
-
-template void fir1_complex<float>(std::complex<float> *out, int N, float cutoff);
-template void fir1_complex<double>(std::complex<double> *out, int N, double cutoff);
-
-template float sinc<float>(float x);
-template double sinc<double>(double x);
+#endif /* FILE_MMAP_HH_*/

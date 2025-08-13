@@ -18,7 +18,7 @@ CUDAScanner = SCons.Scanner.C.CScanner()
 # the extra .linkinfo files when calling scons -c
 def CUDANVCCStaticObjectEmitter(target, source, env):
         tgt, src = SCons.Defaults.StaticObjectEmitter(target, source, env)
-        print(src)
+        #print(src)
         #for file in src:
         #        lifile = os.path.splitext(src[0].rstr())[0] + '.linkinfo'
         #        tgt.append(lifile)
@@ -45,7 +45,7 @@ def generate(env):
         env['NVCC'] = 'nvcc'
 
         # default flags for the NVCC compiler
-        env['NVCCFLAGS'] = '--compiler-bindir=/usr/bin/$NVCCGPP -std=c++14 --ptxas-options=-v $NVCCGPUFLAGS --compiler-options -Wall,-Werror,-g,-pthread,-fPIC'
+        env['NVCCFLAGS'] = '--compiler-bindir=/usr/bin/$NVCCGPP --ptxas-options=-v $NVCCGPUFLAGS --compiler-options -Wfatal-errors,-Wall,-Werror,-g,-pthread,-fPIC'
         env['STATICNVCCFLAGS'] = ''
         env['SHAREDNVCCFLAGS'] = ''
 

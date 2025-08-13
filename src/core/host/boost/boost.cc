@@ -191,7 +191,7 @@ std::list<CT_HOST_FILE> CT_BOOST_HOST::f_file_list(
 				if (boost::filesystem::is_regular_file(dir_iter->status())) {
 					std::string str_tmp = dir_iter->path().generic_string();
 
-					D("Match: %s",str_tmp.c_str());
+					D("MAtch: %s",str_tmp.c_str());
 					/* Match plugin regexp */
 					if (std::regex_match(str_tmp.begin(), str_tmp.end(),
 							c_filter)) {

@@ -53,9 +53,14 @@
 #include <c/debug.h>
 #include <time.h>
 #include <signal.h>
-#ifndef __UCLIBC__
-#include <execinfo.h>
-#include <syslog.h>
+
+#if !defined(__UCLIBC__) &&  !defined(_WIN32)
+    #include <execinfo.h>
+    #include <syslog.h>
+#endif
+
+#if defined(_WIN32)
+    #include <windows.h>
 #endif
 
 struct ST_DEBUG gs_debug = { NULL, f_debug_va, NULL };
@@ -212,9 +217,12 @@ int f_debug_va(void * in_v_arg, time_t in_s_time, const char * in_str_file,
 
 	/* print time */
 	{
-        struct tm ps_tm;
-        localtime_r(&in_s_time, &ps_tm);
-        i_nb_char += strftime(&str_buffer[i_nb_char], sizeof(str_buffer) - i_nb_char, "[%H:%M:%S]", &ps_tm);
+		struct tm * ps_tm;
+		ps_tm = localtime(&in_s_time);
+		if (1 || ps_tm) {
+			i_nb_char += strftime(&str_buffer[i_nb_char],
+					sizeof(str_buffer) - i_nb_char, "[%H:%M:%S]", ps_tm);
+		}
 	}
 
 	/* print file info */
@@ -256,8 +264,8 @@ int f_debug_va(void * in_v_arg, time_t in_s_time, const char * in_str_file,
 				E_DEBUG_XTERM_COLOR_WHITE, E_DEBUG_XTERM_COLOR_BLACK);
 		break;
 	}
-#endif
-
+#endif // #ifndef _WIN32
+#ifndef _WIN32
   {
     int i_syslog_pri;
     char b_syslog = 0;
@@ -285,6 +293,7 @@ int f_debug_va(void * in_v_arg, time_t in_s_time, const char * in_str_file,
       syslog(i_syslog_pri, "[MASTER] %s", str_buffer);
     }
   }
+#endif // #ifndef _WIN32
 
 	/* print new line */
 	fprintf(fd, "%s\n", str_buffer);
@@ -297,6 +306,7 @@ int f_debug_va(void * in_v_arg, time_t in_s_time, const char * in_str_file,
 	return 0;
 }
 
+#ifndef _WIN32
 void f_debug_print_backtrace(void) {
 #ifndef __UCLIBC__
 	int j, nptrs;
@@ -326,6 +336,8 @@ void f_debug_print_backtrace(void) {
   CRIT("SEGFAULT");
 
 }
+#endif // #ifndef _WIN32
+
 
 void abort (void) {
 	raise(SIGABRT);

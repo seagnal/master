@@ -107,6 +107,14 @@ inline __host__ __device__ double dot(double3 const& a, double3 const& b) {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
+inline __host__ __device__ float varf(float2 const &a) {
+	return dotf(a,a);
+}
+
+inline __host__ __device__ float modulof(float const &a, float const &b) {
+	return a - b * floorf(a/b);
+}
+
 inline __device__ float2 make_complex(float const &argument) {
 	float2 s_tmp;
 	sincosf(argument, &s_tmp.y, &s_tmp.x);
@@ -242,6 +250,53 @@ inline __device__ T __max(T&a, T&b) {
 template<>
 inline __device__ float2 __max(float2&a, float2&b) {
 	return make_float2(M_MAX(a.x, b.x), M_MAX(a.y, b.y));
+}
+
+/*template<>*/
+inline __device__ float2 __max_complex(float2&a, float2&b) {
+
+	float a_abs = sqrtf((a.x * a.x) + (a.y * a.y)) ;
+	float b_abs = sqrtf((b.x * b.x) + (b.y * b.y)) ;
+	float a_phase = atan2f(a.y , a.x);
+	float b_phase = atan2f(b.y , b.x);
+
+	if(a_abs > b_abs){
+		return a;
+	}
+	else if(a_abs < b_abs){
+		return b;
+	}
+	else{
+				if(a_phase > b_phase){
+					return a;
+				}
+				else{
+					return b;
+				}
+	}
+}
+
+inline __device__ float2 __min_complex(float2&a, float2&b) {
+
+	float a_abs = sqrtf((a.x * a.x) + (a.y * a.y)) ;
+	float b_abs = sqrtf((b.x * b.x) + (b.y * b.y)) ;
+	float a_phase = atan2f(a.y , a.x);
+	float b_phase = atan2f(b.y , b.x);
+
+	if(a_abs < b_abs){
+		return a;
+	}
+	else if(a_abs > b_abs){
+		return b;
+	}
+	else{
+				if(a_phase < b_phase){
+					return a;
+				}
+				else{
+					return b;
+				}
+	}
 }
 
 template<typename T>

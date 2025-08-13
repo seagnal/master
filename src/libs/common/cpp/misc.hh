@@ -56,6 +56,7 @@
 #include <vector>
 #include <limits>
 
+#include <list>
 /***********************************************************************
  * Defines
  ***********************************************************************/
@@ -71,19 +72,38 @@
 /* Files */
 bool f_file_exits (const std::string& in_str_name);
 time_t f_file_touch(const std::string& in_str_pathname);
+uint64_t f_get_size_file(const std::string& in_str_pathname);
 
-/* Process launch */
+/* Return output of a command */
 std::string f_misc_get_output(const std::string & in_str_cmd);
+
+/* Generate random string */
+std::string f_misc_generate_random_string(int in_i_length);
 
 /* net settings */
 std::string f_misc_get_ip_address(std::string const & in_str_device);
 
-/* Remove middle of string */
+/* Replace middle of string by [...] if size exceeds specified size */
 std::string f_misc_str_remove_middle(std::string const & in_str_line, uint16_t i_size_max, uint16_t i_nb_carac_start, uint16_t i_nb_carac_end);
+
+/* Replace end of string by [...] if size exceeds specified size */
+std::string f_misc_str_remove_end(std::string const & in_str_line, uint16_t i_size_max);
+
+/* Replace start of string by [...] if size exceeds specified size */
+std::string f_misc_str_remove_start(std::string const & in_str_line, uint16_t i_size_max);
 
 /* Base 64 */
 std::string f_base64_encode(char const* in_pc_buf, size_t in_sz_buf);
 std::vector<char> f_base64_decode(std::string const& in_str);
+/* List file in folder */
+std::list<std::string> f_misc_file_list(
+		std::string const in_str_path, std::string const & in_str_prefix,
+		std::string const & in_str_suffix,
+		bool const in_b_debug = false);
+
+
+/* Create a folder */
+int f_misc_create_folder(std::string const & in_str_path);
 
 /* Thermal zone */
 float f_misc_get_themal_temp(uint32_t in_i_thermal_zone);

@@ -124,6 +124,7 @@ struct ST_DEBUG {
  ***********************************************************************/
 #ifdef __cplusplus
 extern "C" {
+#define _Noreturn [[noreturn]]
 #endif
 void f_debug_register(struct ST_DEBUG * in_ps_debug);
 void f_debug_unregister(struct ST_DEBUG * in_ps_debug);
@@ -134,9 +135,8 @@ int f_debug_va(void * in_pv_arg, time_t in_s_time, const char * in_str_file, int
 		const char * in_str_func, enum ET_DEBUG_TYPE in_e_level,
 		const char *in_str_format, va_list in_s_ap);
 void f_debug_print_backtrace(void);
-void f_debug_assert_fail (const char *__assertion, const char *__file,
-			   unsigned int __line, const char *__function)
-     __THROW __attribute__ ((__noreturn__));
+_Noreturn void f_debug_assert_fail (const char *__assertion, const char *__file,
+               unsigned int __line, const char *__function);
 #ifdef __cplusplus
 }
 ;

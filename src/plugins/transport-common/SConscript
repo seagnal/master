@@ -51,6 +51,19 @@ sw_dict = {
 bs.AddSW(sw_dict)
 
 sw_dict = {
+    'name':'plugin-transport-unix',
+    'type':'library',
+    'sources': ['unix.cc'],
+    'includes':['./','#src/plugins/'],
+    'defines':[],
+    'libs':{'shared':['core','boost'], 'static':['node','common-c','common-cpp']},
+    'install': [],
+    'api': 'api.hh'
+}
+
+bs.AddSW(sw_dict)
+
+sw_dict = {
     'name':'plugin-transport-serial',
     'type':'program',
     'sources': ['main.cc'],

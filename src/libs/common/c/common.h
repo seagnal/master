@@ -90,6 +90,18 @@
 #define M_DEGTORAD (0.017453292519943295474371680597869271878153085)
 #define M_RADTODEG (57.29577951308232286464772187173366546630859375)
 
+#if !defined (__ASSERT_VOID_CAST)
+#define __ASSERT_VOID_CAST (void)
+#endif
+
+#if !defined(__ASSERT_FUNCTION) && defined(_WIN32)
+#define __ASSERT_FUNCTION __FUNCTION__
+#endif
+
+#if !defined(__STRING)
+#define __STRING(x)	#x
+#endif
+
 #define M_ASSERT(expr) 							\
   ((expr)								\
    ? __ASSERT_VOID_CAST (0)						\
@@ -128,7 +140,7 @@ struct double2_t
 struct double3_t
 {
     double x, y, z;
-} __attribute__ ((packed));
+} /*__attribute__ ((packed))*/;
 
 
 #endif /* COMMON_H_ */

@@ -55,6 +55,7 @@
 #include <string>
 #include <vector>
 #include <stdarg.h>
+#include <sstream>
 
 /***********************************************************************
  * Defines
@@ -113,7 +114,36 @@ std::string const f_string_human_readable_time(uint64_t in_i_time);
 std::wstring f_wstring_format(const wchar_t * in_str_replace, ...);
 std::wstring f_wstring_format_va(const wchar_t * in_str_fmt, va_list in_s_ap);
 
+/* Convert a string to time offset */
+uint64_t f_string_to_seconds(std::string const & in_str_input);
+
+/* Read a file and set content to a string */
+std::string f_string_from_file(const std::string& in_str_filename);
+
 //std::string f_string_from_buffer(uint8_t * in_pc_buffer, size_t in_sz_buffer);
 template <typename T>
 std::string f_string_from_buffer(T * in_pc_buffer, size_t in_sz_buffer);
+
+
+template <typename T>
+std::vector<T> f_string_to_vector(std::string in_str_value) {
+    std::vector<T> result;
+    if (in_str_value.size()) {
+        std::string str_envValue(in_str_value);
+        std::istringstream iss(str_envValue);
+
+        T floatValue;
+        char semicolon = ';';
+        while (iss >> floatValue >> semicolon) {
+            result.push_back(floatValue);
+        }
+        // Read the last float value after the loop (no trailing comma)
+        if (!(iss.eof() || iss.fail())) {
+            iss >> floatValue;
+            result.push_back(floatValue);
+        }
+    }
+    return result;
+}
+
 #endif /* STRING_HH_ */

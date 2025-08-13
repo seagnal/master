@@ -61,14 +61,14 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include <syslog.h>
+//#include <syslog.h>
 /***********************************************************************
  * Defines
  ***********************************************************************/
 #define _V(x) (" " M_STR(x) ":") << (x)
-#define _CRIT CT_DEBUG::in(__FILE__, __LINE__, __PRETTY_FUNCTION__, E_DEBUG_TYPE_CRITICAL)
-#define _DBG CT_DEBUG::in(__FILE__, __LINE__, __PRETTY_FUNCTION__, E_DEBUG_TYPE_INFO)
-#define _WARN CT_DEBUG::in(__FILE__, __LINE__, __PRETTY_FUNCTION__, E_DEBUG_TYPE_WARNING)
+#define _CRIT  CT_DEBUG::in(__FILE__, __LINE__, __PRETTY_FUNCTION__, E_DEBUG_TYPE_CRITICAL)
+#define _DBG   CT_DEBUG::in(__FILE__, __LINE__, __PRETTY_FUNCTION__, E_DEBUG_TYPE_INFO)
+#define _WARN  CT_DEBUG::in(__FILE__, __LINE__, __PRETTY_FUNCTION__, E_DEBUG_TYPE_WARNING)
 #define _FATAL CT_DEBUG::in(__FILE__, __LINE__, __PRETTY_FUNCTION__, E_DEBUG_TYPE_FATAL)
 #define _RED ("\x1B[1;31m")
 #define _GREEN ("\x1B[1;32m")
@@ -89,14 +89,14 @@ struct ST_DEBUG_BACKTRACE {
 
 class CT_DEBUG: public std::exception {
 	std::string _str_file;
-	uint _i_line;
+    unsigned int _i_line;
 	std::string _str_function;
 	enum ET_DEBUG_TYPE _e_type;
 	bool _b_print;
 	std::ostringstream _s;
 	std::string _str_tmp;
 public:
-	CT_DEBUG(char const * in_str_file, uint in_i_line,
+    CT_DEBUG(char const * in_str_file, unsigned int in_i_line,
 			char const * in_str_function, enum ET_DEBUG_TYPE in_e_type) {
 		_str_file = in_str_file;
 		_i_line = in_i_line;
@@ -130,7 +130,7 @@ public:
 		return *this;
 	}
 
-	static CT_DEBUG in(char const * in_str_file, uint in_i_line,
+    static CT_DEBUG in(char const * in_str_file, unsigned int in_i_line,
 			char const * in_str_function, enum ET_DEBUG_TYPE in_e_type) {
 		CT_DEBUG c_tmp(in_str_file, in_i_line, in_str_function, in_e_type);
 		return c_tmp;

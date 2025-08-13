@@ -505,7 +505,7 @@ int CT_HOST::f_config_load(std::string const & in_str_file) {
 	CT_NODE c_node;
 	int ec;
 
-	c_node.from_xml_file(in_str_file);
+	c_node.from_xml_file(f_string_replace(in_str_file,"#",""));
 	//D("Dumping configuration node:\n %s", c_node.to_xml().c_str());
 	_WARN << "Load config: " << in_str_file;
 	ec = f_config_load(c_node);
@@ -900,13 +900,18 @@ std::string CT_HOST::f_looking_for_file(std::string in_str_file, std::string in_
   {
 		char * pc_tmp = getenv(in_str_var.c_str());
 		if(pc_tmp != NULL) {
-	    std::string str_system_file = std::string(pc_tmp)+"/"+in_str_file;
-      if(in_b_debug) {
-        _DBG << "Lookging for "<< str_system_file;
-      }
-	    if(f_misc_file_exists(str_system_file.c_str()) == EC_SUCCESS) {
-	      str_file = str_system_file;
-	    }
+
+			std::vector<std::string> v_paths = f_string_split(std::string(pc_tmp), ";");
+			for (auto str_tmp : v_paths) {
+		    std::string str_system_file = str_tmp+"/"+in_str_file;
+	      if(in_b_debug) {
+	        _DBG << "Lookging for "<< str_system_file;
+	      }
+		    if(f_misc_file_exists(str_system_file.c_str()) == EC_SUCCESS) {
+		      str_file = str_system_file;
+					break;
+		    }
+			}
 		}
   }
   if(in_b_debug) {

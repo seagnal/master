@@ -52,48 +52,16 @@
 /***********************************************************************
  * Includes
  ***********************************************************************/
+#include <cstdint>
+
 /***********************************************************************
  * Defines
  ***********************************************************************/
 #define C_ID_OFFSET_BASE 16
 #define C_ID_CAVEO_OFFSET_BASE 28
 
-#if 0
-enum ET_ID_BASE {
-	E_ID_READER_BASE = 0xA000,
-	E_ID_RECORD_BASE,
-	E_ID_AUDIO_BASE,
-	E_ID_BFU_BASE,
-	E_ID_TEST_BASE,
-	E_ID_MVIZ_BASE,
-	E_ID_PROC_MGR_BASE,
-	E_ID_TASK_MGR_BASE,
-	E_ID_VIZ_PROC_MGR,
-	E_ID_VIZ_IMAGE_BASE,
-	E_ID_VIZ_BISTATIC_BASE,
-	E_ID_VIZ_RECORD_BASE,
-	E_ID_VIZ_READER_BASE,
-	E_ID_VIZ_REMOTE_BASE,
-	E_ID_SMEMS_BASE,
-	E_ID_HISTORY_BASE,
-	E_ID_POSITIONING_BASE,
-	E_ID_ADC_SPI_BASE,
-	E_ID_ADC_UIO_BASE,
-	E_ID_SMODEM_BASE,
-	E_ID_FEC_BASE,
-	E_ID_S18_BASE,
-	E_ID_TITAN_FUSION_BASE,
-	E_ID_CNN_BASE,
-	E_ID_TITAN_SIMU_BASE,
-	E_ID_COMMON_BASE = 0xFFFF,
-	E_ID_CAVEO_BASE = 0xCAE0,
-	E_ID_ACQ_BASE = 0xC001,
-	E_ID_LINK_BASE = 0xBAB0,
-	E_ID_TASK_BASE = 0xABE0,
-};
-#endif
 
-#define E_ID_COMMON_BASE 0xFFFF
+#define E_ID_COMMON_BASE ((uint32_t)0xFFFF)
 #define E_ID_TASK_BASE 0xFFFE
 
 enum ET_ID_LINK {

@@ -17,7 +17,8 @@ sw_dict = {
     'type':'library',
     'sources':'cpp/*.cc',
     'includes':['./'],
-    'libs':{'shared':['bfd','boost'], 'static':[]},
+	'defines':['FF_NO_BT'],
+    'libs':{'shared':['boost'], 'static':[]},
 }
 
 bs.AddSW(sw_dict)
@@ -27,9 +28,8 @@ sw_dict = {
     'type':'library',
     'sources':'math/*.cc',
     'includes':['./'],
-    'libs':{'shared':['common-cpp', 'eigen'], 'static':[]},
+    'libs':{'shared':['common-cpp','eigen'], 'static':[]},
 }
-
 bs.AddSW(sw_dict)
 
 sw_dict = {

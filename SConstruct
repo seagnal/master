@@ -5,43 +5,37 @@ import os
 #Reset umask
 os.umask(0o0022)
 
-if os.path.exists('../SConstruct'):
-    Import('bs')
-    integrated_master=True
-    print("Integrated MASTER")
-else:
-    bs = utils.BuidSystem(ARGUMENTS)
-    Export('bs')
-    integrated_master=False
+bs = utils.BuidSystem(ARGUMENTS)
+Export('bs')
+
 
 ## Configure function
-def ConfigureUpdate(bs):
+def ConfigureInit(bs):
+  # Start of configuration
+  bs.ConfigureStart()
 
+  # Boost Host - Licence
   bs.ConfigureAddLib(name = 'boost', flags = '-lboost_thread -lboost_system -lboost_filesystem -lboost_regex -lrt')
-  bs.ConfigureAddLib(name = 'rt', flags = '-lpthread -lrt')
+
+  # Dynamic Loading - GLIBC LGPL
   bs.ConfigureAddLib(name = 'dl', flags = '-ldl')
-  bs.ConfigureAddLib(name = 'bfd', flags = '-lbfd')
-  bs.ConfigureAddLib(name = 'openmp', flags = '-fopenmp')
-  # bs.ConfigureAddLib(name = 'check', tool = 'pkg-config --cflags --libs check')
+
+  # Bindings Python SWIG - https://github.com/Yikun/Python3/blob/master/LICENSE
   bs.ConfigureAddLib(name = 'python', tool = 'pkg-config --cflags --libs python3')
-  bs.ConfigureAddLib(name = 'eigen', tool = 'pkg-config --cflags --libs eigen3')
+
   # Execute SConscript while bs.init = True
   for submodule_path in os.listdir('src/plugins/'):
     scons_path = os.path.join('src/plugins/', submodule_path, 'SConstruct.sub')
     if os.path.exists(scons_path):
         SConscript(scons_path)
   # End of configuration
+  bs.ConfigureEnd()
+  bs.env_run['ENV']['MASTER_BS_PATH'] = os.getcwd()
 
 
 ## CONFIGURE PART
 if ARGUMENTS.get('config', None) :
-  # Start of configuration
-  if not integrated_master:
-      bs.ConfigureStart()
-  ConfigureUpdate(bs)
-  bs.ConfigureEnd()
-  bs.env_run['ENV']['MASTER_BS_PATH'] = os.getcwd()
-
+  ConfigureInit(bs)
   print("\nConfiguration is now set to: /!\ "+bs['config'] + " /!\ \n");
   if len(COMMAND_LINE_TARGETS) == 0:
     Exit(0)
@@ -58,25 +52,19 @@ if (not ARGUMENTS.get('config', None)) and ('config' not in bs):
 #### LIBRARIES
 ################################################################################
 
-libs = {'shared':['boost','dl','rt','host-boost','core','bml-sab'], 'static':['node','common-c','common-cpp'], 'module':[]}
+libs = {'shared':['boost','host-boost','core','bml-sab','dl'], 'static':['node','common-c','common-cpp'], 'module':[]}
 
 bs.env_run['MASTER_DEFINES'] = []
 host_qt = False
-
-
-if bs['config'] in ['mviz-bistatic', 'mviz-bisbfu']:
-	libs['shared'].append('host-qt')
-	libs['shared'].append('host-qt-nogui')
-	libs['shared'].append('qt-propertybrowser')
 
 libs['module'] = [
 	'plugin-transport-msgqueue',
 	'plugin-transport-function',
 	'plugin-transport-tcp',
-	'plugin-transport-udp'
+	'plugin-transport-udp',
+	'plugin-transport-unix'
 	]
 
-libs['shared'].append('bfd')
 bs.env_run['MASTER_LIBS'] = libs
 modules = []
 bs.env_run['MASTER_MODULES'] = modules
@@ -88,10 +76,7 @@ bs.env_run['ENV']['MASTER_DEPENDS'] = ""
 #### SOURCE FOLDERS
 ################################################################################
 # Variant dir
-if not integrated_master:
-	bs['buildDir'] = os.path.join('__out__',bs['remote'],bs['config'])
-else:
-	bs['buildDir'] = os.path.join('..','__out__',bs['remote'],bs['config'],'master')
+bs['buildDir'] = os.path.join('__out__',bs['remote'],bs['config'])
 
 
 dirs = [
@@ -108,6 +93,7 @@ bs.env_run['MASTER_DIRS'] = dirs
 #### PARSE SUBMODULE
 ################################################################################
 for submodule_path in os.listdir('src/plugins/'):
+    #print(submodule_path)
     scons_path = os.path.join('src/plugins/', submodule_path, 'SConstruct.sub')
     #print(scons_path)
     if os.path.exists(scons_path):
@@ -115,11 +101,9 @@ for submodule_path in os.listdir('src/plugins/'):
         SConscript(scons_path)
 
 # Master program
-if not integrated_master:
-    if 'MASTER_CONFIG' in bs.env_run['ENV']:
-        dirs.append('src')
-        print('MASTER_CONFIG: '+bs.env_run['ENV']['MASTER_CONFIG'])
-    else:
-        print('NO MASTER CONFIG!')
-
+if 'MASTER_CONFIG' in bs.env_run['ENV']:
+    dirs.append('src')
+    print('MASTER_CONFIG: '+bs.env_run['ENV']['MASTER_CONFIG'])
+else:
+    print('NO MASTER CONFIG!')
 bs.AddSubDirs(bs.env_run['MASTER_DIRS'], bs['buildDir'])

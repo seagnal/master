@@ -99,7 +99,7 @@ int CT_MSGQUEUE::f_apply_config(std::string & in_str_url) {
 
   /* Get Size info */
   if(_c_config.has("size")) {
-    _i_msg_cnt = _c_config.get_data<uint16_t>();
+      _i_msg_cnt = (uint64_t)(_c_config("size"));
   }
 
 	/* Store queue name */

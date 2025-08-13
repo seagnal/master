@@ -107,7 +107,6 @@ def Action_make_doc_source(target, source, env):
   except:
     print("Failure during doc generation")
     return -1
-
 def Action_make_autogen_source(target=None, source=None, env=None):
       import json
       import re
@@ -115,11 +114,11 @@ def Action_make_autogen_source(target=None, source=None, env=None):
       # Open ids database
       updated = False
       if sys.version_info >= (3, 0):
-        import dbm
-        db = dbm.open("ids.dbm", 'c')
+        import dbm.gnu
+        db = dbm.gnu.open("ids.dbm.gnu", 'c')
       else:
         import anydbm
-        db = anydbm.open("ids.dbm", 'c')
+        db = anydbm.open("ids.dbm.anydbm", 'c')
 
       #build revert db
       db_revert = {}
@@ -348,10 +347,10 @@ class BuidSystem(UserDict):
     self['MODULE_PATH'] = []
     self.env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME']=1
     self.env['LIBS'] = []
-    self.env['NVCCGPP'] = "g++-5"
+    self.env['NVCCGPP'] = "g++"
     self.env['LINKFLAGS']=['-fPIC']
     self.env['CCFLAGS'] = ['-g','-Og','-Wall','-Werror','-fPIC','-Wfatal-errors', '-pthread']
-    self.env['CXXFLAGS'] = ['-std=c++0x', '-fPIC']
+    self.env['CXXFLAGS'] = ['-std=c++14', '-fPIC']
     self.env['CPPSUFFIXES'].append('.moc')
     self.env['CPPDEFINES'] = {}
     self.env['ROOT_PATH'] = self.env.Dir('#/').abspath
@@ -714,8 +713,15 @@ class BuidSystem(UserDict):
 
 
   def BuildPackage(self, sw_dict, prog, env):
-    DEBNAME = sw_dict['name'] +"-"+self['config']
-    (distname,version,id)= platform.dist()
+    DEBNAME = sw_dict['name'].replace('_','-') +"-"+self['config']
+    (major,minor,subminor) = platform.python_version_tuple()
+    if (major == '3') and (int(minor) >= 5):
+        import distro
+        #(distname,version,id)= distro.linux_distribution(True)
+        #print ((distname,version,id))
+        id = distro.info()['codename']
+    else:
+        (distname,version,id)= platform.dist()
     DEBPLATFORM = id
     version_num = self.version.split('-',1)
     DEBVERSION = version_num[1]
@@ -801,6 +807,7 @@ Description: %s
 
     #
     env.Depends(debpkg, debcontrol)
+    env.Depends(debpkg, sources)
 
     # And we can generate the .deb file by calling dpkg-deb
     a = env.Command(debpkg, debcontrol, "fakeroot dpkg-deb -b %s %s" % (debfolder, "$TARGET"))
@@ -809,6 +816,8 @@ Description: %s
     return a
 
   def BuildBindings(self, library):
+      self.BuidAutogen(library)
+
       lib_app = library['object']['env_app']
 
       swig_api_cc = lib_app.Command(action = Action_make_api_source,
@@ -845,14 +854,12 @@ Description: %s
       swig_app.MergeFlags(library_dict)
       lib_python = swig_app.SharedLibrary(source = [swig_python, swig_api_cc], target = library['object']['api_swig_py'])
       lib_octave = swig_app.Mkoctfile(source = swig_octave, target = library['object']['api_swig_oct'])
-
       swig_app_doc = swig_app.Clone(PLUGINNAME = library['name'].upper())
       lib_doc = swig_app_doc.Command(action = Action_make_doc_source,
                                    source = [library['object']['api']],
                                    target = library['object']['api_doc'])
 
-      lib_app.Alias(library['name']+'.bindings',[lib_python, lib_octave])
-
+      lib_app.Alias(library['name']+'.bindings',[library['object']['api_autogen_header'], lib_python, lib_octave])
 
       return library['object']['install']
   def BuidAutogen(self, library):
@@ -877,9 +884,6 @@ Description: %s
           lib_app.Ignore(lib_obj['api_autogen_header'], library['object']['api_autogen_header'])
 
 
-
-
-
   def BuildModule(self, sw_dict, library, remote_dict, env_app):
 
     # Check remote dict created
@@ -896,7 +900,6 @@ Description: %s
       lib_app['LINKER'] = remote_dict['PREFIX']+'ld'
       lib_app['AR'] = remote_dict['PREFIX']+'ar'
       lib_app['CPPPATH'].insert(0,remote_dict['INC'])
-      lib_app['CPPPATH'].append('#src/plugins')
 
 
 
@@ -912,13 +915,18 @@ Description: %s
       for source in library['object']['source_list']:
         if ('api_autogen_header' in lib_obj):
           inc_path = os.path.join(os.path.dirname(library['object']['api_autogen_header']),'../')
+          inc_path2 = os.path.join(lib_app.Dir(os.path.dirname(library['object']['api'])).srcnode().abspath,'../')  
           lib_app['CPPPATH'].insert(0,lib_app.Dir(inc_path).abspath)
+          lib_app['CPPPATH'].insert(0,lib_app.Dir(inc_path2).abspath)
         for module in library['libs']['module']:
           library_module = self.GetLib(module)
           if library_module and library_module['object']['api_autogen_header']:
             self.BuidAutogen(library_module)
             inc_path = os.path.join(os.path.dirname(library_module['object']['api_autogen_header']),'../')
+            inc_path2 = os.path.join(lib_app.Dir(os.path.dirname(library_module['object']['api'])).srcnode().abspath,'../')
+            #print("---",inc_path, inc_path2)
             lib_app['CPPPATH'].insert(0,lib_app.Dir(inc_path).abspath)
+            lib_app['CPPPATH'].insert(0,lib_app.Dir(inc_path2).abspath)
 
       # Build each object separately
       sharedList = []
@@ -943,17 +951,19 @@ Description: %s
 
             if ('api_autogen_header' in lib_obj):
               lib_app.Depends(sharedobject, library['object']['api_autogen_header'])
-
             for module in library['libs']['module']:
               library_module = self.GetLib(module)
               if library_module and library_module['object']['api_autogen_header']:
                 lib_app.Depends(sharedobject, library_module['object']['api_autogen_header'])
-            sharedList.append(sharedobject)
+            if extfile[1] in ['.cu']:
+                sharedCuList.append(sharedobject)
+            else:
+                sharedList.append(sharedobject)
 
       # Build final library from list of shared object
       if len(sharedCuList):
           if 'CUDA_DLINK_MODE' in env_app:
-            cuObj = lib_app.Dlink(target=library['object']['target']+'.dlink. o', source = sharedCuList)
+            cuObj = lib_app.Dlink(target=library['object']['target']+'.dlink.o', source = sharedCuList)
             lib_obj['shared'] = lib_app.SharedLibrary(target = library['object']['target'], source = [sharedList, cuObj, sharedCuList])
           else:
             lib_obj['shared'] = lib_app.SharedLibrary(target = library['object']['target'], source = [sharedList, sharedCuList])
@@ -997,12 +1007,10 @@ Description: %s
       env_app['EXTRADEPS'].append(node)
       # Add module to install list
       library['object']['install'].append({'type':'module', 'source':node.get_abspath(), 'target': []})
-
     if library['object']['api']:
 	    for src_tmp in  self.env.Glob(library['object']['api']):
 	    	#print("API INSTALL",src_tmp.srcnode().get_abspath(), library['deb']['target_module'], library['name'])
     		library['object']['install'].append({'type':'user', 'source':src_tmp.srcnode().get_abspath(), 'target': library['deb']['target_module']})
-
 
     return library['object']['install']
 
@@ -1081,6 +1089,19 @@ Description: %s
     env_app['CPPDEFINES']['CFG_${config_def}'.strip()] = "1"
     env_app['CPPDEFINES']['CFG_PROFILE'] = "${config_def}"
     env_app['CPPDEFINES']['BS_VERSION'] = "'"+self.version+ "'"
+
+
+    (major,minor,subminor) = platform.python_version_tuple()
+    if (major == '3') and (int(minor) >= 5):
+        import distro
+        (distname,version,id_)= distro.linux_distribution(True)
+        id = distro.info()['codename']
+    else:
+        (distname,version,id)= platform.dist()
+    dist_define = ('_'.join(["PLATFORM",distname, id])).upper()
+    env_app['CPPDEFINES'][dist_define] = "1"
+    #print('Defining '+ dist_define)
+
     env_app['CPPPATH'] = []
     env_app['LIBPATH'] = []
     env_app['EXTRADEPS'] = []
@@ -1116,7 +1137,12 @@ Description: %s
 
     include_list = []
     for include in sw_dict['external-includes']:
+      #print("----: ",os.path.abspath(os.path.join(self.env.Dir("./").srcnode().abspath,include)), include)
       include_list.append(self.env.Dir(include).srcnode())
+      if include.startswith('.'):
+        tmp = os.path.abspath(os.path.join(self.env.Dir("./").srcnode().abspath,include))
+        include_list.append(tmp)
+
     sw_dict['external-includes'] = include_list
 
     if type(sw_dict['defines']) is dict:
@@ -1134,6 +1160,7 @@ Description: %s
     for include in sw_dict['includes']:
       # TODO Seems to bug with ../ --- print(self.env.Dir(include).srcnode().abspath)
       env_app['CPPPATH'].append(self.env.Dir(include).srcnode())
+
     env_app['CPPPATH'].append(env_app.Dir('.'));
 
     # CROSS COMPILER
@@ -1151,14 +1178,20 @@ Description: %s
       if install['source'].find('*') != -1:
           #print(install['source'], os.getcwd())
           for src_tmp in  self.env.Glob(install['source']):
+              print("Glob match:",src_tmp)
               install_tmp = install.copy()
               install_tmp['type'] = 'user'
               install_tmp['source'] = src_tmp.srcnode().get_abspath()
               sw_dict['object']['install'].append(install_tmp)
       else:
           install['type'] = 'user'
-          install['source'] = self.env.File(install['source']).srcnode().get_abspath()
+          src_tmp = install['source']
+          install['source'] = self.env.File(src_tmp).srcnode().get_abspath()
+          if not os.path.exists(install['source']):
+            #print('not source',)
+            install['source'] = self.env.File(src_tmp).get_abspath()
           sw_dict['object']['install'].append(install)
+          #print(install['source'])
     #  env_app.Install(target=dst, source=src)
 
     # STATIC INCLUDE
@@ -1217,6 +1250,9 @@ Description: %s
           library['object']['targets'][self['remote']] = {'deps':[] }
         lib_obj = library['object']['targets'][self['remote']]
 
+        if library['object']['api']:
+          self.BuidAutogen(library)
+
         # Create lib if missing
         if not ('shared' in lib_obj):
           lib_app = library['object']['env_app']
@@ -1250,6 +1286,7 @@ Description: %s
 
         for include in library['external-includes']:
           env_app['CPPPATH'].append(include)
+          
 
         # Add install list of library
         sw_dict['object']['install'].extend(library['object']['install'])
@@ -1284,10 +1321,19 @@ Description: %s
           library = self.GetLib(module)
           if not library['ext']:
             print("- " + module + ' (module)')
-
+            
             install_list = self.BuildModule(sw_dict, library, remote_dict, env_app)
             # Add install list of library
-            sw_dict['object']['install'].extend(install_list)
+            autogen = library['object']['api_autogen_header']
+            if autogen:
+              print(autogen)
+              inc_path = os.path.join(os.path.dirname(autogen),'../')
+              inc_path2 = os.path.join(env_app.Dir(os.path.dirname(library['object']['api'])).srcnode().abspath,'../')  
+              env_app['CPPPATH'].insert(0,env_app.Dir(inc_path).abspath)
+              env_app['CPPPATH'].insert(0,env_app.Dir(inc_path2).abspath)
+              print(env_app.Dir(inc_path).abspath)
+              print(env_app.Dir(inc_path2).abspath)
+
             #print(install_list)
           else:
             print('Not supported')
@@ -1465,7 +1511,7 @@ Description: %s
       self['libs'][target] = sw_dict
       # preserve previous plugin 'install' content
       if not sw_dict['object']['install']:
-          sw_dict['object']['install'] = []
+        sw_dict['object']['install'] = []
 
       # Module bindingscat
       if sw_dict['object']['api']:
@@ -1480,17 +1526,16 @@ Description: %s
 
         if not sw_dict['ext']:
           install_list = self.BuildModule(sw_dict, sw_dict, remote_dict, env_app)
-          #print(install_list)
           sw_dict['object']['install'].extend(install_list)
-
           lib_obj = sw_dict['object']['targets'][self['remote']]
-          if ('api_swig_py' in sw_dict['object']):
-              env_app.Depends(lib_obj['shared'], sw_dict['object']['api_swig_py'])
-              sw_dict['object']['install'].append({'type':'module', 'source':sw_dict['object']['api_swig_py'], 'target': []})
+          if id not in ["xavier"]:
+              if ('api_swig_py' in sw_dict['object']):
+                  env_app.Depends(lib_obj['shared'], sw_dict['object']['api_swig_py'])
+                  sw_dict['object']['install'].append({'type':'module', 'source':sw_dict['object']['api_swig_py'], 'target': []})
 
-          if ('api_swig_oct' in sw_dict['object']):
-              env_app.Depends(lib_obj['shared'], sw_dict['object']['api_swig_oct'])
-              sw_dict['object']['install'].append({'type':'module', 'source':sw_dict['object']['api_swig_oct'], 'target': []})
+              if ('api_swig_oct' in sw_dict['object']):
+                  env_app.Depends(lib_obj['shared'], sw_dict['object']['api_swig_oct'])
+                  sw_dict['object']['install'].append({'type':'module', 'source':sw_dict['object']['api_swig_oct'], 'target': []})
 
           if ('api_doc' in sw_dict['object']):
               env_app.Depends(lib_obj['shared'], sw_dict['object']['api_doc'])
@@ -1499,12 +1544,14 @@ Description: %s
           if ('api_autogen_header' in sw_dict['object']):
               sw_dict['object']['install'].append({'type':'module', 'source':sw_dict['object']['api_autogen_header'], 'target': []})
 
-
+        #print(sw_dict['object']['install'])
         install_node = self.BuildPackage(sw_dict, target, env_app)
 
         env_app.Alias(modInstall,install_node)
 
-
+      # Module bindingscat
+      #if sw_dict['object']['api']:
+      #    self.BuildBindings(sw_dict)
 
     elif sw_dict['type'] == 'module':
 
