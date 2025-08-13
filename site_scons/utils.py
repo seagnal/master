@@ -428,6 +428,7 @@ class BuidSystem(UserDict):
     elif config_nvprof:
       print("NVPROF: ", config_nvprof)
       self.env_run['PREARGS'] = "/usr/local/cuda/bin/nvprof -f  --cpu-profiling on   --concurrent-kernels on --force-overwrite  --export-profile " + config_nvprof; #--profile-from-start off
+      #self.env_run['PREARGS'] = "/opt/nvidia/nsight-compute/2021.3.1/nv-nsight-cu-cli  -k KernelXXXX  --section SourceCounters  --section SpeedOfLight   --target-processes all   -f --export " + config_nvprof
     elif config_valgrind == '1':
       print("VALGRIND: ", config_sprof)
       self.env_run['PREARGS'] = 'valgrind --tool=memcheck --num-callers=40 --leak-check=full'
