@@ -298,7 +298,7 @@ void CT_TASK::f_complete(ST_TASK_STATUS const & in_s_status) {
 }
 
 void CT_TASK::f_abort(ST_TASK_STATUS const & in_s_status) {
-	_DBG << "Abort task: " << _c_uid;
+	//_DBG << "Abort task: " << _c_uid;
 	switch (_e_last_status) {
 	case E_TASK_STATE_ABORTING:
 		_DBG << "Abort task: E_TASK_STATE_ABORTING";

@@ -52,14 +52,13 @@
 /***********************************************************************
  * Includes
  ***********************************************************************/
-#include <boost/bind.hpp>
-#include <boost/asio/local/stream_protocol.hpp>
 
 #include <c/common.h>
 #include <plugin.hh>
 #include <host.hh>
 #include <list>
 
+#include <boost/asio/local/stream_protocol.hpp>
 /***********************************************************************
  * Defines
  ***********************************************************************/

@@ -56,9 +56,8 @@ sw_dict = {
     'sources': ['unix.cc'],
     'includes':['./','#src/plugins/'],
     'defines':[],
-    'libs':{'shared':['core','boost'], 'static':['node','common-c','common-cpp']},
-    'install': [],
-    'api': 'api.hh'
+    'libs':{'shared':['core','boost'], 'static':['node','common-c','common-cpp'], 'module':['plugin-transport-tcp']},
+    'install': []
 }
 
 bs.AddSW(sw_dict)

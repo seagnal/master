@@ -339,8 +339,6 @@ class BuidSystem(UserDict):
     self.remote_dict = {'default':{'PREFIX':'', 'INC':'' , 'CPPDEFINES':[], 'LIBPATH':[]}}
 
 
-
-
     self['libs'] = {}
     self['modules'] = {}
     self['LD_LIBRARY_PATH'] = []
@@ -481,9 +479,9 @@ class BuidSystem(UserDict):
     self.env_run['BUILDERS']['Dtc'] = builder
 
     # SWIG builders
-    builder = self.env.Builder(action=["swig -c++ -Wall -python $_CPPINCFLAGS -Isite_scons/swig/ -o $TARGET $SOURCE"])
+    builder = self.env.Builder(action=["swig -c++ -Wall -python $_CPPINCFLAGS -Isite_scons/swig/ -o $TARGET $SOURCE && sleep 1 && sync"])
     self.env['BUILDERS']['SwigPython'] = builder
-    builder = self.env.Builder(action=["swig -c++ -Wall -octave $_CPPINCFLAGS -Isite_scons/swig/ -o $TARGET $SOURCE"])
+    builder = self.env.Builder(action=["swig -c++ -Wall -octave $_CPPINCFLAGS -Isite_scons/swig/ -o $TARGET $SOURCE && sleep 1 && sync"])
     self.env['BUILDERS']['SwigOctave'] = builder
     builder = self.env.Builder(action=["mkoctfile $_CPPINCFLAGS -o $TARGET $SOURCE"])
     self.env['BUILDERS']['Mkoctfile'] = builder
@@ -916,7 +914,7 @@ Description: %s
       for source in library['object']['source_list']:
         if ('api_autogen_header' in lib_obj):
           inc_path = os.path.join(os.path.dirname(library['object']['api_autogen_header']),'../')
-          inc_path2 = os.path.join(lib_app.Dir(os.path.dirname(library['object']['api'])).srcnode().abspath,'../')  
+          inc_path2 = os.path.join(lib_app.Dir(os.path.dirname(library['object']['api'])).srcnode().abspath,'../')
           lib_app['CPPPATH'].insert(0,lib_app.Dir(inc_path).abspath)
           lib_app['CPPPATH'].insert(0,lib_app.Dir(inc_path2).abspath)
         for module in library['libs']['module']:
@@ -933,43 +931,46 @@ Description: %s
       sharedList = []
       sharedCuList = []
       sharedCheckedList = []
-      for sources in library['object']['source_list']:
-        for source in sources:
-            #print(source.get_path())
-            extfile = os.path.splitext(source.get_path())
-            if extfile[1] in ['.cu']:
-                sharedobject = lib_app.SharedObject(source = source, target=source.get_path()+".os")
-            else:
-                sharedobject = lib_app.SharedObject(source = source)
-            if library['rules']:
-                sharedcheckedobject = lib_app.File(source.get_path()+".rc")
-                #f = lambda target, source, env: Action_check_rules(target, source, env, library['rules'])
-                #print(sharedcheckedobject)
-                lib_app_check = lib_app.Clone(RULES = library['rules'])
-                lib_app_check.Command(sharedcheckedobject, source.abspath, Action_check_rules)
-                sharedCheckedList.append(sharedcheckedobject)
-                lib_app_check.Depends(sharedcheckedobject, sharedobject)
-
-            if ('api_autogen_header' in lib_obj):
-              lib_app.Depends(sharedobject, library['object']['api_autogen_header'])
-            for module in library['libs']['module']:
-              library_module = self.GetLib(module)
-              if library_module and library_module['object']['api_autogen_header']:
-                lib_app.Depends(sharedobject, library_module['object']['api_autogen_header'])
-            if extfile[1] in ['.cu']:
-                sharedCuList.append(sharedobject)
-            else:
-                sharedList.append(sharedobject)
-
-      # Build final library from list of shared object
-      if len(sharedCuList):
-          if 'CUDA_DLINK_MODE' in env_app:
-            cuObj = lib_app.Dlink(target=library['object']['target']+'.dlink.o', source = sharedCuList)
-            lib_obj['shared'] = lib_app.SharedLibrary(target = library['object']['target'], source = [sharedList, cuObj, sharedCuList])
-          else:
-            lib_obj['shared'] = lib_app.SharedLibrary(target = library['object']['target'], source = [sharedList, sharedCuList])
+      if library['force-target']:
+          lib_obj['shared'] = [library['force-target']]
       else:
-          lib_obj['shared'] = lib_app.SharedLibrary(target = library['object']['target'], source = sharedList)
+          for sources in library['object']['source_list']:
+            for source in sources:
+                #print(source.get_path())
+                extfile = os.path.splitext(source.get_path())
+                if extfile[1] in ['.cu']:
+                    sharedobject = lib_app.SharedObject(source = source, target=source.get_path()+".os")
+                else:
+                    sharedobject = lib_app.SharedObject(source = source)
+                if library['rules']:
+                    sharedcheckedobject = lib_app.File(source.get_path()+".rc")
+                    #f = lambda target, source, env: Action_check_rules(target, source, env, library['rules'])
+                    #print(sharedcheckedobject)
+                    lib_app_check = lib_app.Clone(RULES = library['rules'])
+                    lib_app_check.Command(sharedcheckedobject, source.abspath, Action_check_rules)
+                    sharedCheckedList.append(sharedcheckedobject)
+                    lib_app_check.Depends(sharedcheckedobject, sharedobject)
+
+                if ('api_autogen_header' in lib_obj):
+                  lib_app.Depends(sharedobject, library['object']['api_autogen_header'])
+                for module in library['libs']['module']:
+                  library_module = self.GetLib(module)
+                  if library_module and library_module['object']['api_autogen_header']:
+                    lib_app.Depends(sharedobject, library_module['object']['api_autogen_header'])
+                if extfile[1] in ['.cu']:
+                    sharedCuList.append(sharedobject)
+                else:
+                    sharedList.append(sharedobject)
+
+          # Build final library from list of shared object
+          if len(sharedCuList):
+              if 'CUDA_DLINK_MODE' in env_app:
+                cuObj = lib_app.Dlink(target=library['object']['target']+'.dlink.o', source = sharedCuList)
+                lib_obj['shared'] = lib_app.SharedLibrary(target = library['object']['target'], source = [sharedList, cuObj, sharedCuList])
+              else:
+                lib_obj['shared'] = lib_app.SharedLibrary(target = library['object']['target'], source = [sharedList, sharedCuList])
+          else:
+              lib_obj['shared'] = lib_app.SharedLibrary(target = library['object']['target'], source = sharedList)
 
       lib_app.Depends(lib_obj['shared'], sharedCheckedList)
 
@@ -1083,6 +1084,10 @@ Description: %s
       Listify(sw_dict,'external-includes')
 
 
+    if 'force-target' in sw_dict:
+        sw_dict['force-target'] = self.env.File(sw_dict['force-target']).srcnode()
+    else:
+        sw_dict['force-target'] = None
 
     sw_dict['object']={ 'targets': {}, 'install':[], 'api_source_list':[] }
 
@@ -1287,7 +1292,7 @@ Description: %s
 
         for include in library['external-includes']:
           env_app['CPPPATH'].append(include)
-          
+
 
         # Add install list of library
         sw_dict['object']['install'].extend(library['object']['install'])
@@ -1322,14 +1327,16 @@ Description: %s
           library = self.GetLib(module)
           if not library['ext']:
             print("- " + module + ' (module)')
-            
+
             install_list = self.BuildModule(sw_dict, library, remote_dict, env_app)
             # Add install list of library
+            sw_dict['object']['install'].extend(install_list)
+
             autogen = library['object']['api_autogen_header']
             if autogen:
               print(autogen)
               inc_path = os.path.join(os.path.dirname(autogen),'../')
-              inc_path2 = os.path.join(env_app.Dir(os.path.dirname(library['object']['api'])).srcnode().abspath,'../')  
+              inc_path2 = os.path.join(env_app.Dir(os.path.dirname(library['object']['api'])).srcnode().abspath,'../')
               env_app['CPPPATH'].insert(0,env_app.Dir(inc_path).abspath)
               env_app['CPPPATH'].insert(0,env_app.Dir(inc_path2).abspath)
               print(env_app.Dir(inc_path).abspath)

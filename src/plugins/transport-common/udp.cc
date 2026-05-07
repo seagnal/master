@@ -49,7 +49,8 @@
 /***********************************************************************
  * Includes
  ***********************************************************************/
-#include <boost/bind.hpp>
+//#include <boost/bind.hpp>
+#include <cpp/debug.hh>
 #include <cpp/string.hh>
 #include <c/misc.h>
 #include <udp.hh>
@@ -275,7 +276,7 @@ int CT_UDP::f_run(CT_HOST_CONTEXT&) {
 			boost::posix_time::milliseconds(500));
 	//_DBG << _V(this) << " Timer Start";
 	c_timer.async_wait(
-			boost::bind(&CT_UDP::on_timeout, this, &timer_result, _1));
+			boost::bind(&CT_UDP::on_timeout, this, &timer_result, boost::placeholders::_1));
 	boost::system::error_code ec_boost;
 
 	while (1) {

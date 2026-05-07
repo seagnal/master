@@ -136,7 +136,7 @@ int CT_MSGQUEUE::f_run(CT_HOST_CONTEXT&) {
 
 	/*Receive 100 numbers */
 
-	char pc_buffer[C_PORT_NODE_BUFFER_SIZE];
+	char pc_buffer[C_PORT_NODE_BUFFER_SIZE] = {0};
 
 	size_t sz_min = _sz_msg;
 
