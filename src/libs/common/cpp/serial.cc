@@ -51,6 +51,7 @@
  #include "serial.hh"
  #include <boost/asio/read.hpp>
  #include <boost/asio/placeholders.hpp>
+ #include <boost/bind/bind.hpp>
 
  CT_SERIAL::CT_SERIAL(const char * in_str_port_name,
                       uint32_t in_i_baudrate,

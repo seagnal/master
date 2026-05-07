@@ -90,6 +90,9 @@ std::string f_string_remove_whitespaces(std::string const & in_str);
 std::vector<std::string> f_string_split(std::string const &in_str,
 		std::string const &in_str_delim);
 
+void f_string_split(std::string const &in_str, std::string const &in_str_delim,
+		std::vector<std::string> &in_v_elems);
+
 std::string f_string_toupper(std::string const & in_str_source);
 std::string f_string_tolower(std::string const & in_str_source);
 
